@@ -71,7 +71,7 @@ let runBots (botsFactory : (Game * Player -> Bot) []) count =
         if count > 50000 then
             if Interlocked.Increment(progress) % 1000 = 0 then
                 lock progress (fun () -> 
-                    printf "%.0f%%" ((float !progress) / (float count) * 100.0)
+                    printf "%.0f%%" ((float progress.Value) / (float count) * 100.0)
                     Console.CursorLeft <- 0)
         )) |> ignore
 
