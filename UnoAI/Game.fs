@@ -39,6 +39,20 @@ type Game(numPlayers, dealer : Player) =
    
     let mutable status = Playing
 
+    let reverseDirection() =
+        direction <-
+            match direction with
+            | Clockwise -> Counterclockwise
+            | Counterclockwise -> Clockwise
+
+    let advance steps =
+        let delta =
+            match direction with
+            | Clockwise        -> steps
+            | Counterclockwise -> -steps
+            
+        activePlayer <- (activePlayer + delta) %% numPlayers
+
     let playerCards, remainingCards =
         fullCardDeck
         |> List.shuffle
@@ -50,20 +64,24 @@ type Game(numPlayers, dealer : Player) =
         |> List.toArray
 
     let mutable discardPile, drawPile =
-        let rec getDiscardAndDrawPile cards = // wrong according to standard rules
+        let rec getDiscardAndDrawPile cards =
             match cards with
             | StandardCard (_, _) as topCard :: drawPile -> [topCard], drawPile
-            | _                                          -> getDiscardAndDrawPile (cards |> List.shuffle)
+            | Skip _              as topCard :: drawPile -> advance 1
+                                                            [topCard], drawPile
+            | DrawTwo _           as topCard :: drawPile -> //drawCards activePlayer 2
+                                                            //advance 1
+                                                            //[topCard], drawPile
+                                                            players.[activePlayer] <- (players.[activePlayer] |> List.take 2 |> List.rev) @ players.[activePlayer]
+                                                            advance 1
+                                                            [topCard], drawPile |> List.skip 2
+            | Reverse _           as topCard :: drawPile -> reverseDirection()
+                                                            activePlayer <- dealer
+                                                            [topCard], drawPile
+            | Wild _              as topCard :: drawPile -> [topCard], drawPile
+            | WildDrawFour _      as topCard :: drawPile -> getDiscardAndDrawPile (cards |> List.shuffle)
     
         getDiscardAndDrawPile remainingCards
-
-    let advance steps =
-        let delta =
-            match direction with
-            | Clockwise        -> steps
-            | Counterclockwise -> -steps
-            
-        activePlayer <- (activePlayer + delta) %% numPlayers
 
     let refillDrawPile() =
         if not (drawPile |> List.isEmpty) then
@@ -127,7 +145,13 @@ type Game(numPlayers, dealer : Player) =
         else
             let topCard = discardPile |> List.head
 
-            doCardsMatch topCard card
+            // special case when first card in the discard pile is a Wild card
+            if topCard = Wild None then
+                let topCard' = Wild (getCardColor card)
+                discardPile <- topCard' :: (discardPile |> List.skip 1)
+                doCardsMatch topCard' card
+            else
+                doCardsMatch topCard card
             
     member self.PlayCard card =
         if status <> Playing then
@@ -136,9 +160,8 @@ type Game(numPlayers, dealer : Player) =
         if not (self.CanPlayCard card) then
             invalidArg "card" "The specified card cannot be played."
 
-        match card with
-        | Wild None | WildDrawFour None -> invalidArg "card" "Invalid card."
-        | _                             -> ()
+        if card = Wild None || card = WildDrawFour None then
+            invalidArg "card" "Invalid card."
 
         let player = self.ActivePlayer
 
@@ -157,10 +180,7 @@ type Game(numPlayers, dealer : Player) =
         | DrawTwo _           -> drawCards (getNextPlayer()) 2
                                  advance 2
         | Reverse _           -> // some rules say that in case of 2 players, Reverse acts like Skip
-                                 direction <-
-                                     match direction with
-                                     | Clockwise -> Counterclockwise
-                                     | Counterclockwise -> Clockwise
+                                 reverseDirection()
                                  advance 1
         | Wild _              -> advance 1
         | WildDrawFour _      -> drawCards (getNextPlayer()) 4
