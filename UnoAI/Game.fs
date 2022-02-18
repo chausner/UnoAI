@@ -3,6 +3,12 @@
 open Utils
 open Card
 
+type RuleSet = {
+    TwoPlayerReverseIsSkip : bool }
+
+let defaultRuleSet = {
+    TwoPlayerReverseIsSkip = true }
+
 type Player = int
 
 type Direction =
@@ -27,7 +33,7 @@ type Action =
     | DrawAndPlayCardAction of Player * Card
     | DrawCardsAndSkipAction of Player * Card list
 
-type Game(numPlayers, dealer : Player) =
+type Game(ruleSet : RuleSet, numPlayers, dealer : Player) =
     do if numPlayers < 2 || numPlayers > 10 then
         invalidArg "numPlayers" "The number of players must be between 2 and 10."
     do if dealer < 0 || dealer >= numPlayers then
@@ -69,10 +75,7 @@ type Game(numPlayers, dealer : Player) =
             | StandardCard (_, _) as topCard :: drawPile -> [topCard], drawPile
             | Skip _              as topCard :: drawPile -> advance 1
                                                             [topCard], drawPile
-            | DrawTwo _           as topCard :: drawPile -> //drawCards activePlayer 2
-                                                            //advance 1
-                                                            //[topCard], drawPile
-                                                            players.[activePlayer] <- (players.[activePlayer] |> List.take 2 |> List.rev) @ players.[activePlayer]
+            | DrawTwo _           as topCard :: drawPile -> players[activePlayer] <- (drawPile |> List.take 2 |> List.rev) @ players[activePlayer]
                                                             advance 1
                                                             [topCard], drawPile |> List.skip 2
             | Reverse _           as topCard :: drawPile -> reverseDirection()
@@ -87,14 +90,14 @@ type Game(numPlayers, dealer : Player) =
         if not (drawPile |> List.isEmpty) then
             invalidOp "Draw pile can only be refilled when it is empty."
             
-        drawPile <- discardPile |> List.tail |> Seq.map removeColor |> List.shuffle
+        drawPile <- discardPile |> List.tail |> Seq.map removeColor |> Seq.shuffle |> Seq.toList
         discardPile <- [discardPile |> List.head]
 
     let drawCards (player : Player) numCards =
-        for i = 1 to numCards do
+        for _ = 1 to numCards do
             let cardDrawn = drawPile |> List.head
             drawPile <- drawPile |> List.tail
-            players.[player] <- cardDrawn :: players.[player]
+            players[player] <- cardDrawn :: players[player]
             if drawPile |> List.isEmpty then
                 refillDrawPile()   
 
@@ -112,6 +115,10 @@ type Game(numPlayers, dealer : Player) =
             |> Seq.concat
             |> Seq.sumBy getCardScore
         status <- Ended (winner, score)
+
+    member self.RuleSet = ruleSet
+
+    member self.NumPlayers = numPlayers
 
     member self.Players = players      
 
@@ -135,58 +142,53 @@ type Game(numPlayers, dealer : Player) =
         if status <> Playing then
             invalidOp "An action can only be performed when the game has not ended yet."
 
-//        if card = Wild None || card = WildDrawFour None then
-//            invalidArg "card" "Invalid card."
+        let topCard = discardPile |> List.head
 
-        let player = self.ActivePlayer
-
-        if not (players.[player] |> List.exists (isCardInHand card)) then
-            false
+        if topCard <> Wild None then
+            doCardsMatch topCard card
         else
-            let topCard = discardPile |> List.head
-
             // special case when first card in the discard pile is a Wild card
-            if topCard = Wild None then
-                let topCard' = Wild (getCardColor card)
-                discardPile <- topCard' :: (discardPile |> List.skip 1)
-                doCardsMatch topCard' card
-            else
-                doCardsMatch topCard card
+            let topCard' = Wild (getCardColor card)
+            doCardsMatch topCard' card
             
     member self.PlayCard card =
         if status <> Playing then
             invalidOp "An action can only be performed when the game has not ended yet."
 
+        let player = self.ActivePlayer
+
+        if not (players[player] |> List.contains (removeColor card)) then
+            invalidArg "card" "The specified card is not part of the active player's hand."
+        
         if not (self.CanPlayCard card) then
             invalidArg "card" "The specified card cannot be played."
 
         if card = Wild None || card = WildDrawFour None then
-            invalidArg "card" "Invalid card."
-
-        let player = self.ActivePlayer
+            invalidArg "card" "A color must be set for the card."
 
         discardPile <- card :: discardPile
 
-        let rec removeCardFromHand card hand =
-            match hand with
-            | []      -> []
-            | x :: xs -> if isCardInHand card x then xs else x :: removeCardFromHand card xs
+        let removeCardFromHand card hand =
+            let i = hand |> List.findIndex ((=) (removeColor card))
+            hand |> List.removeAt i
 
-        players.[player] <- removeCardFromHand card players.[player]
+        players[player] <- removeCardFromHand card players[player]
         
         match card with
         | StandardCard (_, _) -> advance 1
         | Skip _              -> advance 2
         | DrawTwo _           -> drawCards (getNextPlayer()) 2
                                  advance 2
-        | Reverse _           -> // some rules say that in case of 2 players, Reverse acts like Skip
-                                 reverseDirection()
-                                 advance 1
+        | Reverse _           -> if ruleSet.TwoPlayerReverseIsSkip && numPlayers = 2 then
+                                     advance 2
+                                 else
+                                     reverseDirection()
+                                     advance 1
         | Wild _              -> advance 1
         | WildDrawFour _      -> drawCards (getNextPlayer()) 4
                                  advance 2
 
-        if players.[player] |> List.isEmpty then
+        if players[player] |> List.isEmpty then
             endGame player
 
     member self.DrawCard (playDrawnCardCallback : Card -> Card option) =
@@ -197,7 +199,7 @@ type Game(numPlayers, dealer : Player) =
 
         drawCards player 1 
 
-        let cardDrawn = players.[player] |> List.head
+        let cardDrawn = players[player] |> List.head
 
         if self.CanPlayCard cardDrawn then        
             match playDrawnCardCallback cardDrawn with

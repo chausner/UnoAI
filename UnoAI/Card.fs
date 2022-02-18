@@ -18,18 +18,18 @@ type Card =
 
 let fullCardDeck =
     [ for n = 0 to 9 do
-          for c in [Red; Green; Blue; Yellow] do
+          for c in [| Red; Green; Blue; Yellow |] do
               yield StandardCard(n, c)
               if n <> 0 then
                   yield StandardCard(n, c)
 
-      for c in [Red; Green; Blue; Yellow] do
-          for i = 1 to 2 do
+      for c in [| Red; Green; Blue; Yellow |] do
+          for _ = 1 to 2 do
               yield Skip c
               yield DrawTwo c
               yield Reverse c 
               
-      for i = 1 to 4 do
+      for _ = 1 to 4 do
           yield Wild None
           yield WildDrawFour None ]
 
@@ -68,13 +68,6 @@ let doCardsMatch oldCard newCard =
         | None, _    -> invalidArg "oldCard" "Card needs to have a color assigned."
         | _,    None -> invalidArg "newCard" "Card needs to have a color assigned."
         | c1,   c2   -> c1 = c2
-
-let isCardInHand card cardInHand =
-    match card, cardInHand with
-    | _             , _ when card = cardInHand -> true
-    | Wild _        , Wild None                -> true
-    | WildDrawFour _, WildDrawFour None        -> true
-    | _             , _                        -> false
 
 let getCardScore card =
     match card with

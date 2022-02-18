@@ -4,6 +4,7 @@
 		<OutputType>Exe</OutputType>
 		<TargetFramework>net6.0</TargetFramework>
 		<Platforms>AnyCPU;x64</Platforms>
+		<ServerGarbageCollection>true</ServerGarbageCollection>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -11,14 +12,23 @@
 		<Compile Include="Card.fs" />
 		<Compile Include="Game.fs" />
 		<Compile Include="Bot.fs" />
-		<Compile Include="RandomBot.fs" />
-		<Compile Include="GreedyBot.fs" />
-		<Compile Include="DiversityBot.fs" />
-		<Compile Include="CardRankingBot.fs" />
-		<Compile Include="CardCounting.fs" />
-		<Compile Include="ScoreBot.fs" />
 		<Compile Include="BotRunner.fs" />
+		<Compile Include="Bots\RandomBot.fs" />
+		<Compile Include="Bots\GreedyBot.fs" />
+		<Compile Include="Bots\DiversityBot.fs" />
+		<Compile Include="Bots\CardRankingBot.fs" />
+		<Compile Include="Bots\ScoreBot.fs" />
+		<Compile Include="Bots\CardCounting.fs" />
+		<Compile Include="Bots\CardCountingBot.fs" />
 		<Compile Include="Program.fs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="FSharp.Collections.ParallelSeq" Version="1.2.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Update="FSharp.Core" Version="6.0.3" />
 	</ItemGroup>
 
 </Project>

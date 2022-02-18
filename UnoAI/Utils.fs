@@ -2,33 +2,30 @@
 
 open System
 open System.Diagnostics
-open System.Threading
 
 let (|?) = defaultArg
 
 let stopwatch action =
     let stopwatch = Stopwatch.StartNew()
-    let result = action()
+    let result = action stopwatch
     result, stopwatch.Elapsed
+
+let formatTimeSpan (ts : TimeSpan) =
+    sprintf "%02d:%02d:%02d.%02d" (int ts.TotalHours) ts.Minutes ts.Seconds (ts.Milliseconds / 10)
 
 let inline (%%) x y =
     ((x % y) + y) % y
 
-let private threadLocalRandom = new ThreadLocal<Random>(fun () -> new Random())
-
-let random() = 
-    threadLocalRandom.Value
-
 module Seq =
     let shuffle source =
         let swap (a : 'T []) i j =
-            let tmp = a.[i]
-            a.[i] <- a.[j]
-            a.[j] <- tmp
+            let tmp = a[i]
+            a[i] <- a[j]
+            a[j] <- tmp
 
         let shuffled = source |> Seq.toArray
         let num = Array.length shuffled
-        let rand = random()
+        let rand = Random.Shared
 
         for i = 0 to num - 2 do
             let r = rand.Next(i, num)
@@ -51,12 +48,12 @@ module Seq =
 module Array =
     let chooseRandom array =
         let length = array |> Array.length
-        array.[random().Next(length)]
+        array[Random.Shared.Next(length)]
 
 module List =
     let chooseRandom list =
         let length = list |> List.length
-        list |> List.item (random().Next(length))
+        list |> List.item (Random.Shared.Next(length))
 
     let shuffle list =
         list |> Seq.shuffle |> Array.toList
