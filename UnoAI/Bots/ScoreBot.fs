@@ -23,6 +23,7 @@ type ScoreBot(game : Game, player : Player, weights : float []) =
     let cardScoringFunction card =
         match card with                     
         | StandardCard (_, _) -> weights[0]
+        | Reverse _ when game.RuleSet.TwoPlayerReverseIsSkip && game.NumPlayers = 2 -> weights[2]
         | Reverse _           -> weights[1]
         | Skip _              -> weights[2]
         | DrawTwo _           -> weights[3]
@@ -73,6 +74,7 @@ type ScoreBot(game : Game, player : Player, weights : float []) =
             | StandardCard (_, _) -> advance 1
             | Skip _              -> advance 2
             | DrawTwo _           -> advance 2
+            | Reverse _ when game.RuleSet.TwoPlayerReverseIsSkip && game.NumPlayers = 2 -> advance 2
             | Reverse _           -> advance 1
             | Wild _              -> advance 1
             | WildDrawFour _      -> advance 2

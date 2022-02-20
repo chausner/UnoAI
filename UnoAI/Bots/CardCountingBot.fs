@@ -128,13 +128,11 @@ type CardCountingBot(game : Game, player : Player, weights : float []) =
 
         let direction' =
             match card with
+            | Reverse _ when game.RuleSet.TwoPlayerReverseIsSkip && game.NumPlayers = 2 -> view.Direction
             | Reverse _ ->
-                if game.RuleSet.TwoPlayerReverseIsSkip && game.NumPlayers = 2 then
-                    view.Direction
-                else
-                    match view.Direction with
-                    | Clockwise        -> Counterclockwise
-                    | Counterclockwise -> Clockwise
+                match view.Direction with
+                | Clockwise        -> Counterclockwise
+                | Counterclockwise -> Clockwise
             | _ -> view.Direction
 
         let discardPile' = card :: view.DiscardPile
@@ -151,10 +149,8 @@ type CardCountingBot(game : Game, player : Player, weights : float []) =
             | StandardCard (_, _) -> advance 1
             | Skip _              -> advance 2
             | DrawTwo _           -> advance 2
-            | Reverse _           -> if game.RuleSet.TwoPlayerReverseIsSkip && game.NumPlayers = 2 then
-                                         advance 2
-                                     else
-                                         advance 1
+            | Reverse _ when game.RuleSet.TwoPlayerReverseIsSkip && game.NumPlayers = 2 -> advance 2
+            | Reverse _           -> advance 1
             | Wild _              -> advance 1
             | WildDrawFour _      -> advance 2
 

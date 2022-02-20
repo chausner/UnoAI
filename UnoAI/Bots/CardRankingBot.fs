@@ -21,6 +21,7 @@ type CardRankingBot(game : Game, player : Player, ranks : int [], minCardCounts 
     let cardTypeIndex card = 
         match card with
         | StandardCard (_, _) -> 0
+        | Reverse _ when game.RuleSet.TwoPlayerReverseIsSkip && game.NumPlayers = 2 -> 2
         | Reverse _           -> 1
         | Skip _              -> 2
         | DrawTwo _           -> 3
