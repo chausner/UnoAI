@@ -19,7 +19,7 @@ let private subtractCounts (counts1 : Map<Card, int>) (counts2 : Map<Card, int>)
 
 let private getCountsFromOwnCardsDiscardPile (state : State) (viewpoint : Player) =
     Seq.append state.Players[viewpoint] state.DiscardPile
-    |> Seq.countBy id
+    |> Seq.countBy removeColor
     |> Map.ofSeq
 
 let private getInitialCardCounts (initialState : State) viewpoint =    
