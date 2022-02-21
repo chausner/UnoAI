@@ -67,7 +67,7 @@ type ScoreBot(game : Game, player : Player, weights : float []) =
                 match direction' with
                 | Clockwise        -> steps
                 | Counterclockwise -> -steps
-            (view.ActivePlayer + delta) %% view.PlayerCardCounts.Length
+            (view.ActivePlayer + delta) %% game.NumPlayers
 
         let activePlayer' = 
             match card with
@@ -100,7 +100,7 @@ type ScoreBot(game : Game, player : Player, weights : float []) =
                 match view.Direction with
                 | Clockwise        -> steps
                 | Counterclockwise -> -steps
-            (view.ActivePlayer + delta) %% view.PlayerCardCounts.Length
+            (view.ActivePlayer + delta) %% game.NumPlayers
 
         let playerCardCounts' = Array.copy view.PlayerCardCounts
         
@@ -117,8 +117,8 @@ type ScoreBot(game : Game, player : Player, weights : float []) =
     let applyAdvance view =
         let nextPlayer : Player =
             match view.Direction with
-            | Clockwise        -> (view.ActivePlayer + 1) %% view.PlayerCardCounts.Length
-            | Counterclockwise -> (view.ActivePlayer - 1) %% view.PlayerCardCounts.Length
+            | Clockwise        -> (view.ActivePlayer + 1) %% game.NumPlayers
+            | Counterclockwise -> (view.ActivePlayer - 1) %% game.NumPlayers
         { view with ActivePlayer = nextPlayer }
 
     let playDrawnCardCallback drawnCard =

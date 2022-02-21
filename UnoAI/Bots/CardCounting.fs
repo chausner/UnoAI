@@ -4,7 +4,7 @@ open Card
 open Game
 open Utils
 
-let private maxCardCountsFromFullDeck =
+let private fullDeckCardCounts =
     fullCardDeck
     |> Seq.countBy id
     |> Map.ofSeq
@@ -22,8 +22,9 @@ let private getCountsFromOwnCardsDiscardPile (state : State) (viewpoint : Player
     |> Seq.countBy removeColor
     |> Map.ofSeq
 
-let private getInitialCardCounts (initialState : State) viewpoint =    
-    subtractCounts maxCardCountsFromFullDeck (getCountsFromOwnCardsDiscardPile initialState viewpoint)
+let private getInitialCardCounts (initialState : State) viewpoint =
+    getCountsFromOwnCardsDiscardPile initialState viewpoint
+    |> subtractCounts fullDeckCardCounts
 
 let initCardCountingContext (initialState : State) viewpoint =
     let context = Array.create initialState.Players.Length (getInitialCardCounts initialState viewpoint)
@@ -38,7 +39,7 @@ let private getCardCounts (prevContext : CardCountingContext) (prevState : State
         match cards with
         | []           -> cardCounts
         | card :: tail ->
-            let upperBound = maxCardCountsFromFullDeck[card] - (countsFromOwnCardsDiscardPile |> Map.tryFind card |? 0)
+            let upperBound = fullDeckCardCounts[card] - (countsFromOwnCardsDiscardPile |> Map.tryFind card |? 0)
             let x = 
                 if cardCounts[card] > upperBound then
                     cardCounts |> Map.add card upperBound
@@ -60,7 +61,7 @@ let private getCardCounts (prevContext : CardCountingContext) (prevState : State
             if doCardsMatch discardPileTop card then
                 0
             else
-                min (count + 1) (maxCardCountsFromFullDeck[card] - (countsFromOwnCardsDiscardPile |> Map.tryFind card |? 0)))
+                min (count + 1) (fullDeckCardCounts[card] - (countsFromOwnCardsDiscardPile |> Map.tryFind card |? 0)))
     | DrawCardAction (p, card) when p = viewpoint ->
         ensureCardCountIsNotAboveUpperBound prevCardCounts [card]
     | DrawCardAction (p, _) ->
@@ -81,7 +82,7 @@ let private getCardCounts (prevContext : CardCountingContext) (prevState : State
         let drawCount = cards.Length
         prevCardCounts
         |> Map.map (fun card count ->
-            min (count + drawCount) (maxCardCountsFromFullDeck[card] - (countsFromOwnCardsDiscardPile |> Map.tryFind card |? 0)))
+            min (count + drawCount) (fullDeckCardCounts[card] - (countsFromOwnCardsDiscardPile |> Map.tryFind card |? 0)))
     | DrawCardsAndSkipAction (p, cards) when p = viewpoint ->
         ensureCardCountIsNotAboveUpperBound prevCardCounts cards
     | DrawCardsAndSkipAction (p, _) ->
