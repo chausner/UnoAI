@@ -65,8 +65,8 @@ let doCardsMatch oldCard newCard =
     | _,                    WildDrawFour _                    -> true
     | _,                    _                                 ->
         match getCardColor oldCard, getCardColor newCard with
-        | None, _    -> invalidArg "oldCard" "Card needs to have a color assigned."
-        | _,    None -> invalidArg "newCard" "Card needs to have a color assigned."
+        | None, _
+        | _,    None -> true
         | c1,   c2   -> c1 = c2
 
 let getCardScore card =

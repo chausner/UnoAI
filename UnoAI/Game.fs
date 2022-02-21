@@ -144,12 +144,7 @@ type Game(ruleSet : RuleSet, numPlayers, dealer : Player) =
 
         let topCard = discardPile |> List.head
 
-        if topCard <> Wild None then
-            doCardsMatch topCard card
-        else
-            // special case when first card in the discard pile is a Wild card
-            let topCard' = Wild (getCardColor card)
-            doCardsMatch topCard' card
+        doCardsMatch topCard card
             
     member self.PlayCard card =
         if status <> Playing then
