@@ -33,7 +33,8 @@ type CardCountingBot(game : Game, player : Player, weights : float []) =
         | WildDrawFour _      -> weights[5]
                                           
     let scoreFunction (view : GameView) =  
-        assert (view.ActivePlayer <> player)
+        // TODO: this breaks for 2 players and Reverse/Skip cards
+        // assert (view.ActivePlayer <> player)
 
         seq {
             // number of own cards
@@ -55,49 +56,56 @@ type CardCountingBot(game : Game, player : Player, weights : float []) =
             // number of distinct colors in own cards
             //yield (view.OwnCards |> Seq.choose getCardColor |> Seq.distinct |> Seq.length |> float, weights[4])
 
-            // number of cards of active player
-            //yield (view.PlayerCardCounts[view.ActivePlayer] |> float, weights[5])
+            let nextOpponent =
+                if view.ActivePlayer <> player then
+                    view.ActivePlayer
+                else
+                    assert (game.NumPlayers = 2)
+                    (view.ActivePlayer + 1) %% game.NumPlayers
+
+            // number of cards of next opponent
+            //yield (view.PlayerCardCounts[opponent] |> float, weights[5])
 
             //let numMatchingCards =
-            //    cardCountingContext[view.ActivePlayer]
+            //    cardCountingContext[opponent]
             //    |> Map.toSeq
             //    |> Seq.filter (fun (card, count) -> doCardsMatch view.DiscardPile.Head card)
             //    |> Seq.sumBy snd
             //yield (float numMatchingCards, weights[6]) // alone: 15.800%±0.101%  30.7         63.9, with: 22.011%±0.115%  44.5         59.2
 
             //let numMatchingCards =
-            //    cardCountingContext[view.ActivePlayer]
+            //    cardCountingContext[opponent]
             //    |> Map.toSeq
             //    |> Seq.filter (fun (card, count) -> doCardsMatch view.DiscardPile.Head card)
             //    |> Seq.sumBy snd
-            //let matchingCardProb = numMatchingCards * view.PlayerCardCounts[view.ActivePlayer]
+            //let matchingCardProb = numMatchingCards * view.PlayerCardCounts[opponent]
             //yield (float matchingCardProb, weights[6]) // alone: 15.520%±0.224%
             
             let numMatchingCards =
-                cardCountingContext[view.ActivePlayer]
+                cardCountingContext[nextOpponent]
                 |> Map.toSeq
                 |> Seq.filter (fun (card, count) -> doCardsMatch view.DiscardPile.Head card)
                 |> Seq.sumBy snd
-            let totalCount = cardCountingContext[view.ActivePlayer] |> Map.values |> Seq.sum
-            let matchingCardProb = float (numMatchingCards * view.PlayerCardCounts[view.ActivePlayer]) / float totalCount
+            let totalCount = cardCountingContext[nextOpponent] |> Map.values |> Seq.sum
+            let matchingCardProb = float (numMatchingCards * view.PlayerCardCounts[nextOpponent]) / float totalCount
             yield (matchingCardProb, weights[6]) // alone: 15.719%±0.226%, with: 22.144%±0.115%  44.8         59.1
 
             //let numMatchingCards =
-            //    cardCountingContext[view.ActivePlayer]
+            //    cardCountingContext[opponent]
             //    |> Map.toSeq
             //    |> Seq.filter (fun (card, count) -> doCardsMatch view.DiscardPile.Head card)
             //    |> Seq.length
             //yield (float numMatchingCards, weights[6]) // alone: 15.441%±0.224%
 
             //let matchingCardsScore =
-            //    cardCountingContext[view.ActivePlayer]
+            //    cardCountingContext[opponent]
             //    |> Map.toSeq
             //    |> Seq.filter (fun (card, count) -> doCardsMatch view.DiscardPile.Head card)
             //    |> Seq.sumBy (fun (card, count) -> count * getCardScore card)
             //yield (float matchingCardsScore, weights[6]) // alone: 15.174%±0.222%
 
             //let matchingCardsScore =
-            //    cardCountingContext[view.ActivePlayer]
+            //    cardCountingContext[opponent]
             //    |> Map.toSeq
             //    |> Seq.filter (fun (card, count) -> doCardsMatch view.DiscardPile.Head card)
             //    |> Seq.sumBy (fun (card, count) -> float count * cardScoringFunction card * -1.0)
