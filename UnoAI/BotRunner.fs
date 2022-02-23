@@ -6,6 +6,7 @@ open Game
 open Bot
 open FSharp.Collections.ParallelSeq
 open System
+open System.Diagnostics
 open System.Linq
 
 type GameResult = {
@@ -110,3 +111,36 @@ let printStats (stats : GameStats) (bots : (Game.Game * Game.Player -> Bot) []) 
         let averagePoints = (float stats.TotalPoints[player]) / (float stats.NumGames)
         printfn "%-3i %-18s %7.3f%%±%.3f%%  %11.1f" player playerName (winRate * 100.0) (winRateInterval * 100.0) averagePoints
         
+let runBatchAndPrintStats ruleSet (bots : (Game * Player -> Bot.Bot) []) randomizePlayOrder timeout numGames  =
+    printfn "Games: %i" numGames
+    printfn "Game timeout: %i" timeout
+
+    let cursorPos = Console.GetCursorPosition()
+    let restoreCursor() =
+        let struct (cursorLeft, cursorTop) = cursorPos
+        Console.SetCursorPosition(cursorLeft, cursorTop)
+
+    let stats = initStats bots.Length
+    let mutable lastProgressUpdate: TimeSpan option = None
+
+    let printProgress (stopwatch : Stopwatch) =
+        if lastProgressUpdate.IsNone || (stopwatch.Elapsed - lastProgressUpdate.Value).TotalSeconds >= 1.0 then
+            printfn "Progress: %.0f%%" ((float stats.NumGames) / (float numGames) * 100.0)
+            let eta = 
+                match stats.NumGames with
+                | 0 -> TimeSpan.Zero
+                | _ -> float (numGames - stats.NumGames) / float stats.NumGames * stopwatch.Elapsed            
+            printfn "Elapsed: %s (ETA: %s)" (stopwatch.Elapsed |> formatTimeSpan) (eta |> formatTimeSpan)
+            printStats stats bots
+            restoreCursor()
+            lastProgressUpdate <- Some stopwatch.Elapsed
+
+    let _, elapsed = stopwatch (fun stopwatch ->
+        runBotsBatch ruleSet bots randomizePlayOrder timeout numGames
+        |> Seq.iter (fun result ->
+            updateStats stats result
+            printProgress stopwatch))
+
+    printfn "Progress: 100%%"
+    printfn "Elapsed: %s" (elapsed |> formatTimeSpan)
+    printStats stats bots
