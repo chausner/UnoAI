@@ -10,15 +10,14 @@ let stopwatch action =
     let result = action stopwatch
     result, stopwatch.Elapsed
 
-let formatTimeSpan (ts : TimeSpan) =
+let formatTimeSpan (ts: TimeSpan) =
     sprintf "%02d:%02d:%02d.%02d" (int ts.TotalHours) ts.Minutes ts.Seconds (ts.Milliseconds / 10)
 
-let inline (%%) x y =
-    ((x % y) + y) % y
+let inline (%%) x y = ((x % y) + y) % y
 
 module Seq =
     let shuffle source =
-        let swap (a : 'T []) i j =
+        let swap (a: 'T []) i j =
             let tmp = a[i]
             a[i] <- a[j]
             a[j] <- tmp

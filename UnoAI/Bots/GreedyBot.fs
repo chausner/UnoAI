@@ -12,16 +12,16 @@ open Utils
 /// * When a drawn card can be played, it is always played.
 /// * When a Wild or WildDrawFour is played, the color that is most common in the player's hand is chosen.
 /// </summary>
-type GreedyBot(game : Game, player : Player, chooseMostCommonColor : bool) =
+type GreedyBot(game: Game, player: Player, chooseMostCommonColor: bool) =
     inherit Bot()
 
     let chooseColorIfNeeded card color =
         match card with
-        | Wild None         
-        | WildDrawFour None -> chooseColor card (color())
+        | Wild None
+        | WildDrawFour None -> chooseColor card (color ())
         | _                 -> card
 
-    let getMostCommonColor() =
+    let getMostCommonColor () =
         game.Players[player]
         |> Seq.choose getCardColor
         |> Seq.countBy id
@@ -29,25 +29,26 @@ type GreedyBot(game : Game, player : Player, chooseMostCommonColor : bool) =
         |> Seq.tryMaxBy snd
         |> Option.map fst
 
-    let getRandomColor() =
+    let getRandomColor () =
         [| Red; Green; Blue; Yellow |] |> Array.chooseRandom
 
-    let chooseColor() =
+    let chooseColor () =
         if chooseMostCommonColor then
-            getMostCommonColor() |? getRandomColor()
+            getMostCommonColor () |? getRandomColor ()
         else
-            getRandomColor()
+            getRandomColor ()
 
     let pickMaxBy projection list =
         match list with
-        | [] | [_] -> list
-        | _        ->
+        | []
+        | [ _ ] -> list
+        | _ ->
             let maxValue = list |> Seq.map projection |> Seq.max
             list |> List.filter (fun x -> projection x = maxValue)
 
     override self.PerformAction() =
-        let playableCards =            
-            game.Players[player]  
+        let playableCards =
+            game.Players[player]
             |> Seq.distinct
             |> Seq.filter game.CanPlayCard
             |> Seq.toList
@@ -63,5 +64,5 @@ type GreedyBot(game : Game, player : Player, chooseMostCommonColor : bool) =
         else
             DrawCardBotAction (fun drawnCard -> Some (chooseColorIfNeeded drawnCard chooseColor))
 
-    static member Factory(chooseMostCommonColor : bool) = 
+    static member Factory(chooseMostCommonColor: bool) =
         fun (game, player) -> new GreedyBot(game, player, chooseMostCommonColor) :> Bot

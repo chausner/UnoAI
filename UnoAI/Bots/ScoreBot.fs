@@ -10,18 +10,18 @@ open System
 open System.Globalization
 open System.IO
 
-type private GameView = {
-    OwnCards : Card list;
-    PlayerCardCounts: int [];
-    ActivePlayer : Player; 
-    Direction : Direction;
-    DiscardPile : Card list }
+type private GameView =
+    { OwnCards: Card list
+      PlayerCardCounts: int []
+      ActivePlayer: Player
+      Direction: Direction
+      DiscardPile: Card list }
 
-type ScoreBot(game : Game, player : Player, weights : float []) =
+type ScoreBot(game: Game, player: Player, weights: float []) =
     inherit Bot()
 
     let cardScoringFunction card =
-        match card with                     
+        match card with
         | StandardCard (_, _) -> weights[0]
         | Reverse _ when game.RuleSet.TwoPlayerReverseIsSkip && game.NumPlayers = 2 -> weights[2]
         | Reverse _           -> weights[1]
@@ -30,7 +30,7 @@ type ScoreBot(game : Game, player : Player, weights : float []) =
         | Wild _              -> weights[4]
         | WildDrawFour _      -> weights[5]
 
-    let scoreFunction (view : GameView) =  
+    let scoreFunction (view: GameView) =
         view.OwnCards |> Seq.sumBy cardScoringFunction
 
     let getAllColorOptions card =
@@ -40,12 +40,12 @@ type ScoreBot(game : Game, player : Player, weights : float []) =
         | WildDrawFour None -> colors |> Seq.map (fun c -> WildDrawFour (Some c))
         | _                 -> Seq.singleton card
 
-    let getView() = {
-        OwnCards = game.Players[player];
-        PlayerCardCounts = game.Players |> Array.map List.length;
-        ActivePlayer = game.ActivePlayer;
-        Direction = game.Direction;
-        DiscardPile = game.DiscardPile }
+    let getView () =
+        { OwnCards = game.Players[player]
+          PlayerCardCounts = game.Players |> Array.map List.length
+          ActivePlayer = game.ActivePlayer
+          Direction = game.Direction
+          DiscardPile = game.DiscardPile }
 
     let applyPlayCardAction card view =
         let removeCardFromHand card hand =
@@ -67,9 +67,10 @@ type ScoreBot(game : Game, player : Player, weights : float []) =
                 match direction' with
                 | Clockwise        -> steps
                 | Counterclockwise -> -steps
+
             (view.ActivePlayer + delta) %% game.NumPlayers
 
-        let activePlayer' = 
+        let activePlayer' =
             match card with
             | StandardCard (_, _) -> advance 1
             | Skip _              -> advance 2
@@ -80,7 +81,7 @@ type ScoreBot(game : Game, player : Player, weights : float []) =
             | WildDrawFour _      -> advance 2
 
         let playerCardCounts' = Array.copy view.PlayerCardCounts
-        
+
         playerCardCounts'[player] <- playerCardCounts'[player] - 1
 
         match card with
@@ -88,66 +89,71 @@ type ScoreBot(game : Game, player : Player, weights : float []) =
         | WildDrawFour _ -> playerCardCounts'[advance 1] <- playerCardCounts'[advance 1] + 4
         | _              -> ()
 
-        { OwnCards = ownCards';
-          PlayerCardCounts = playerCardCounts';
-          ActivePlayer = activePlayer';
-          Direction = direction';
+        { OwnCards = ownCards'
+          PlayerCardCounts = playerCardCounts'
+          ActivePlayer = activePlayer'
+          Direction = direction'
           DiscardPile = discardPile' }
 
-    let applyDrawCardAction (view : GameView) = 
+    let applyDrawCardAction (view: GameView) =
         let advance steps : Player =
             let delta =
                 match view.Direction with
                 | Clockwise        -> steps
                 | Counterclockwise -> -steps
+
             (view.ActivePlayer + delta) %% game.NumPlayers
 
         let playerCardCounts' = Array.copy view.PlayerCardCounts
-        
+
         playerCardCounts'[player] <- playerCardCounts'[player] + 1
 
         let cardDrawn = fullCardDeck |> List.chooseRandom
 
-        { OwnCards = cardDrawn :: view.OwnCards;
-          PlayerCardCounts = playerCardCounts';
-          ActivePlayer = advance 1;
-          Direction = view.Direction;
+        { OwnCards = cardDrawn :: view.OwnCards
+          PlayerCardCounts = playerCardCounts'
+          ActivePlayer = advance 1
+          Direction = view.Direction
           DiscardPile = view.DiscardPile }
 
     let applyAdvance view =
-        let nextPlayer : Player =
+        let nextPlayer: Player =
             match view.Direction with
             | Clockwise        -> (view.ActivePlayer + 1) %% game.NumPlayers
             | Counterclockwise -> (view.ActivePlayer - 1) %% game.NumPlayers
+
         { view with ActivePlayer = nextPlayer }
 
     let playDrawnCardCallback drawnCard =
-        let view = getView()
+        let view = getView ()
 
         let options =
             seq {
-                yield! getAllColorOptions drawnCard
-                       |> Seq.map (fun card -> Some card, view |> applyPlayCardAction card |> scoreFunction)
+                yield!
+                    getAllColorOptions drawnCard
+                    |> Seq.map (fun card -> Some card, view |> applyPlayCardAction card |> scoreFunction)
 
-                yield None, view |> applyAdvance |> scoreFunction }
+                yield None, view |> applyAdvance |> scoreFunction
+            }
 
         options |> Seq.maxBy snd |> fst
 
-    let averageDrawCardScore = fullCardDeck |> Seq.averageBy cardScoringFunction       
+    let averageDrawCardScore = fullCardDeck |> Seq.averageBy cardScoringFunction
 
     override self.PerformAction() =
-        let playableCards =            
-            game.Players[player]  
+        let playableCards =
+            game.Players[player]
             |> Seq.distinct
             |> Seq.filter game.CanPlayCard
 
-        let view = getView()
+        let view = getView ()
 
-        let options = 
+        let options =
             seq {
-                yield! playableCards
-                       |> Seq.collect getAllColorOptions
-                       |> Seq.map (fun card -> Some card, view |> applyPlayCardAction card |> scoreFunction)
+                yield!
+                    playableCards
+                    |> Seq.collect getAllColorOptions
+                    |> Seq.map (fun card -> Some card, view |> applyPlayCardAction card |> scoreFunction)
 
                 //yield None, view |> applyDrawCardAction |> scoreFunction
                 yield None, (view |> scoreFunction) + averageDrawCardScore
@@ -159,19 +165,19 @@ type ScoreBot(game : Game, player : Player, weights : float []) =
         | Some card -> PlayCardBotAction card
         | None      -> DrawCardBotAction playDrawnCardCallback
 
-    static member Factory(weights : float []) =
+    static member Factory(weights: float []) =
         fun (game, player) -> new ScoreBot(game, player, weights) :> Bot
 
     static member WeightsWinRate = [| -0.90; -0.64; -0.62; -0.81; 0.55; 0.48; 0.14; 0.13 |] // weights optimized on win rate against 3 other random bots
     static member WeightsAvgPoints = [| -0.81; -0.45; -0.85; -0.52; 0.14; 0.70; 0.08; 0.06 |] // weights optimized on average points against 3 other random bots
     static member WeightsWinRateNew = [| -0.168; -0.163; -0.190; -0.227; 0.048; -0.035 |] // weights optimized on win rate against 3 other random bots
 
-let optimizeWeights() =
+let optimizeWeights () =
     let ruleSet = defaultRuleSet
     let numPlayers = 4
     let numGames = 30_000
 
-    let printScoring (scoring : float []) =
+    let printScoring (scoring: float []) =
         String.concat " " (scoring |> Seq.map (fun x -> x.ToString("F3", CultureInfo.InvariantCulture).PadLeft(6)))
 
     let ranges = [ (-0.26, -0.17); (-0.26, -0.17); (-0.22, -0.08); (-0.32, -0.10); (-0.35, -0.20); (-0.13, 0.14); (-0.12, 0.08) ]

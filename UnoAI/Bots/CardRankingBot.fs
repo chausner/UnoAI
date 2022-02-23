@@ -15,10 +15,10 @@ open System.IO
 /// * When a drawn card can be played, it is always played.
 /// * When a Wild or WildDrawFour is played, the color that is most common in the player's hand is chosen.
 /// </summary>
-type CardRankingBot(game : Game, player : Player, ranks : int [], minCardCounts : int [], playDrawnCardThresholds : int [], chooseMostCommonColor : bool) =
+type CardRankingBot(game: Game, player: Player, ranks: int [], minCardCounts: int [], playDrawnCardThresholds: int [], chooseMostCommonColor: bool) =
     inherit Bot()
 
-    let cardTypeIndex card = 
+    let cardTypeIndex card =
         match card with
         | StandardCard (_, _) -> 0
         | Reverse _ when game.RuleSet.TwoPlayerReverseIsSkip && game.NumPlayers = 2 -> 2
@@ -32,11 +32,11 @@ type CardRankingBot(game : Game, player : Player, ranks : int [], minCardCounts 
 
     let chooseColorIfNeeded card color =
         match card with
-        | Wild None         
-        | WildDrawFour None -> chooseColor card (color())
-        | _                 -> card
+        | Wild None
+        | WildDrawFour None -> chooseColor card (color ())
+        | _ -> card
 
-    let getMostCommonColor() =
+    let getMostCommonColor () =
         game.Players[player]
         |> Seq.choose getCardColor
         |> Seq.countBy id
@@ -44,19 +44,20 @@ type CardRankingBot(game : Game, player : Player, ranks : int [], minCardCounts 
         |> Seq.tryMaxBy snd
         |> Option.map fst
 
-    let getRandomColor() =
+    let getRandomColor () =
         [| Red; Green; Blue; Yellow |] |> Array.chooseRandom
 
-    let chooseColor() =
+    let chooseColor () =
         if chooseMostCommonColor then
-            getMostCommonColor() |? getRandomColor()
+            getMostCommonColor () |? getRandomColor ()
         else
-            getRandomColor()
+            getRandomColor ()
 
     let pickMaxBy projection list =
         match list with
-        | [] | [_] -> list
-        | _        ->
+        | []
+        | [ _ ] -> list
+        | _ ->
             let maxValue = list |> Seq.map projection |> Seq.max
             list |> List.filter (fun x -> projection x = maxValue)
 
@@ -66,8 +67,8 @@ type CardRankingBot(game : Game, player : Player, ranks : int [], minCardCounts 
             |> Seq.filter (fun card -> minCardCounts[cardTypeIndex card] = -1)
             |> Seq.length
 
-        let playableCards =            
-            game.Players[player]  
+        let playableCards =
+            game.Players[player]
             |> Seq.distinct
             |> Seq.filter game.CanPlayCard
             |> Seq.filter (fun card -> numCardsInHand <= minCardCounts[cardTypeIndex card] || minCardCounts[cardTypeIndex card] = -1)
@@ -83,14 +84,14 @@ type CardRankingBot(game : Game, player : Player, ranks : int [], minCardCounts 
             PlayCardBotAction playedCard
         else
 //            DrawCardBotAction (fun drawnCard -> Some (chooseColorIfNeeded drawnCard chooseColor))
-            DrawCardBotAction (fun drawnCard -> 
+            DrawCardBotAction (fun drawnCard ->
                 let threshold = playDrawnCardThresholds[cardTypeIndex drawnCard]
                 if game.Players[player].Length <= threshold || threshold = -1 then
                     Some (chooseColorIfNeeded drawnCard chooseColor)
                 else
                     None)
 
-    static member Factory(ranks : int [], minCardCounts : int [], playDrawnCardThresholds : int [], chooseMostCommonColor : bool) =
+    static member Factory(ranks: int [], minCardCounts: int [], playDrawnCardThresholds: int [], chooseMostCommonColor: bool) =
         fun (game, player) -> new CardRankingBot(game, player, ranks, minCardCounts, playDrawnCardThresholds, chooseMostCommonColor) :> Bot
 
     static member RanksWinRate   = [| 4; 3; 5; 6; 1; 2 |] // optimal ranking to optimize win rate against 3 other random bots (based on 10,000,000 games)
@@ -102,21 +103,23 @@ type CardRankingBot(game : Game, player : Player, ranks : int [], minCardCounts 
     static member PlayDrawnCardThresholdsWinRate   = [| -1; -1; -1; -1; 2; 2 |]
     static member PlayDrawnCardThresholdsAvgPoints = [| -1; -1; -1; -1; 2; 2 |]
 
-let optimizeRanking() =
+let optimizeRanking () =
     let ruleSet = defaultRuleSet
     let numPlayers = 4
     let numGames = 10_000_0
 
     let rec getPermutations n : int list seq =
         match n with
-        | 0 -> seq { yield [ ] }
-        | _ -> let perms = getPermutations (n - 1)
-               seq {
-                   for p in perms do
-                       for i = 0 to p.Length do
-                           yield (p |> List.truncate i) @ [ n ] @ (p |> List.skip i) }
+        | 0 -> seq { yield [] }
+        | _ ->
+            let perms = getPermutations (n - 1)
+            seq {
+                for p in perms do
+                    for i = 0 to p.Length do
+                        yield (p |> List.truncate i) @ [ n ] @ (p |> List.skip i)
+            }
 
-    let printRanking (scoring : int []) =
+    let printRanking (scoring: int []) =
         String.concat " " (scoring |> Seq.map string)
 
     for ranks in getPermutations 6 do
@@ -137,7 +140,7 @@ let optimizeRanking() =
         with
         | e -> () //printfn "error"
 
-let optimizeMinCardCounts() =
+let optimizeMinCardCounts () =
     let ruleSet = defaultRuleSet
     let numPlayers = 4
     let numGames = 1_000_000
@@ -151,13 +154,14 @@ let optimizeMinCardCounts() =
                             for t5 = -1 to n do
                                 for t6 = -1 to n do
                                     if t1 >= start || t2 >= start || t3 >= start || t4 >= start || t5 >= start || t6 >= start then
-                                        yield [| t1; t2; t3; t4; t5; t6 |] }
+                                        yield [| t1; t2; t3; t4; t5; t6 |]
+        }
 
     let enumerateThresholdsFromFile path =
         File.ReadAllLines(path)
         |> Seq.map (fun line -> line.Split('\t') |> Array.map int)
 
-    let printThresholds (scoring : int []) =
+    let printThresholds (scoring: int []) =
         String.concat " " (scoring |> Seq.map string)
 
     let pid = System.Environment.ProcessId
@@ -167,7 +171,7 @@ let optimizeMinCardCounts() =
     //for thresholds in enumerateThresholds 7 -1 do
     //for thresholds in enumerateThresholdsFromFile @"C:\Users\chris\Desktop\UnoAI\run5\best-winrate.csv" do
     for thresholds in enumerateThresholdsFromFile @"C:\Users\chris\Desktop\UnoAI\run5\best-avgscore.csv" do
-        let bots =     
+        let bots =
             //CardRankingBot.Factory(CardRankingBot.RanksWinRate, thresholds, CardRankingBot.PlayDrawnCardThresholdsWinRate, true) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
             CardRankingBot.Factory(CardRankingBot.RanksAvgPoints, thresholds, CardRankingBot.PlayDrawnCardThresholdsAvgPoints, true) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
             |> Seq.toArray
@@ -184,7 +188,7 @@ let optimizeMinCardCounts() =
         with
         | e -> () //printfn "error"
 
-let optimizePlayDrawnCardThresholds() =
+let optimizePlayDrawnCardThresholds () =
     let ruleSet = defaultRuleSet
     let numPlayers = 4
     let numGames = 10_000_000
@@ -199,7 +203,7 @@ let optimizePlayDrawnCardThresholds() =
                         yield e :: e'
             }
 
-    let printThresholds (scoring : int []) =
+    let printThresholds (scoring: int []) =
         String.concat " " (scoring |> Seq.map string)
 
     for thresholds in enumerate [ [-1]; [-1]; [-1]; [-1]; [0;2;3]; [2..4] ] |> Seq.map List.toArray do

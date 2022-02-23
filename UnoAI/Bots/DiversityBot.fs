@@ -14,25 +14,26 @@ open Utils
 /// * When a drawn card can be played, it is always played.
 /// * When a Wild or WildDrawFour is played, the color that is most common in the player's hand is chosen.
 /// </summary>
-type DiversityBot(game : Game, player : Player, chooseMostCommonColor : bool) =
+type DiversityBot(game: Game, player: Player, chooseMostCommonColor: bool) =
     inherit Bot()
 
     let chooseColorIfNeeded card color =
         match card with
-        | Wild None         
-        | WildDrawFour None -> chooseColor card (color())
-        | _                 -> card
+        | Wild None
+        | WildDrawFour None -> chooseColor card (color ())
+        | _ -> card
 
     let getCardDiversityScore card =
         match card with
-        | Wild None | WildDrawFour None -> 0
+        | Wild None
+        | WildDrawFour None -> 0
         | _ ->
             game.Players[player]
             |> Seq.except [| Wild None; WildDrawFour None |]
             |> Seq.filter (doCardsMatch card)
             |> Seq.length
 
-    let getMostCommonColor() =
+    let getMostCommonColor () =
         game.Players[player]
         |> Seq.choose getCardColor
         |> Seq.countBy id
@@ -40,25 +41,26 @@ type DiversityBot(game : Game, player : Player, chooseMostCommonColor : bool) =
         |> Seq.tryMaxBy snd
         |> Option.map fst
 
-    let getRandomColor() =
+    let getRandomColor () =
         [| Red; Green; Blue; Yellow |] |> Array.chooseRandom
 
-    let chooseColor() =
+    let chooseColor () =
         if chooseMostCommonColor then
-            getMostCommonColor() |? getRandomColor()
+            getMostCommonColor () |? getRandomColor ()
         else
-            getRandomColor()
+            getRandomColor ()
 
     let pickMaxBy projection list =
         match list with
-        | [] | [_] -> list
-        | _        ->
+        | []
+        | [ _ ] -> list
+        | _ ->
             let maxValue = list |> Seq.map projection |> Seq.max
             list |> List.filter (fun x -> projection x = maxValue)
 
     override self.PerformAction() =
-        let playableCards =            
-            game.Players[player]  
+        let playableCards =
+            game.Players[player]
             |> Seq.distinct
             |> Seq.filter game.CanPlayCard
             |> Seq.toList
@@ -66,7 +68,7 @@ type DiversityBot(game : Game, player : Player, chooseMostCommonColor : bool) =
         if not (playableCards |> List.isEmpty) then
             let playedCard =
                 playableCards
-                |> pickMaxBy getCardDiversityScore           
+                |> pickMaxBy getCardDiversityScore
                 |> List.chooseRandom
                 |> fun card -> chooseColorIfNeeded card chooseColor
 
@@ -74,5 +76,5 @@ type DiversityBot(game : Game, player : Player, chooseMostCommonColor : bool) =
         else
             DrawCardBotAction (fun drawnCard -> Some (chooseColorIfNeeded drawnCard chooseColor))
 
-    static member Factory(chooseMostCommonColor : bool) = 
+    static member Factory(chooseMostCommonColor: bool) =
         fun (game, player) -> new DiversityBot(game, player, chooseMostCommonColor) :> Bot

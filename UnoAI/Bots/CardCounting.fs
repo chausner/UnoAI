@@ -11,51 +11,53 @@ let private fullDeckCardCounts =
 
 type CardCountingContext = Map<Card, int> []
 
-let private subtractCounts (counts1 : Map<Card, int>) (counts2 : Map<Card, int>) =
+let private subtractCounts (counts1: Map<Card, int>) (counts2: Map<Card, int>) =
     counts1
     |> Map.toSeq
     |> Seq.map (fun (card, count) -> card, count - (counts2 |> Map.tryFind card |? 0))
     |> Map.ofSeq
 
-let private getCountsFromOwnCardsDiscardPile (state : State) (viewpoint : Player) =
+let private getCountsFromOwnCardsDiscardPile (state: State) (viewpoint: Player) =
     Seq.append state.Players[viewpoint] state.DiscardPile
     |> Seq.countBy removeColor
     |> Map.ofSeq
 
-let private getInitialCardCounts (initialState : State) viewpoint =
+let private getInitialCardCounts (initialState: State) viewpoint =
     getCountsFromOwnCardsDiscardPile initialState viewpoint
     |> subtractCounts fullDeckCardCounts
 
-let initCardCountingContext (initialState : State) viewpoint =
+let initCardCountingContext (initialState: State) viewpoint =
     let context = Array.create initialState.Players.Length (getInitialCardCounts initialState viewpoint)
     context[viewpoint] <- Map.empty
     context
 
-let private getCardCounts (prevContext : CardCountingContext) (prevState : State) action (state : State) viewpoint (player : Player) =
+let private getCardCounts (prevContext: CardCountingContext) (prevState: State) action (state: State) viewpoint (player: Player) =
     let prevCardCounts = prevContext[player]
     let countsFromOwnCardsDiscardPile = getCountsFromOwnCardsDiscardPile state viewpoint
     let discardPileTop = state.DiscardPile.Head
-    let rec ensureCardCountIsNotAboveUpperBound (cardCounts : Map<Card, int>) cards =
+
+    let rec ensureCardCountIsNotAboveUpperBound (cardCounts: Map<Card, int>) cards =
         match cards with
-        | []           -> cardCounts
+        | [] -> cardCounts
         | card :: tail ->
             let upperBound = fullDeckCardCounts[card] - (countsFromOwnCardsDiscardPile |> Map.tryFind card |? 0)
-            let x = 
+            let x =
                 if cardCounts[card] > upperBound then
                     cardCounts |> Map.add card upperBound
                 else
                     cardCounts
             ensureCardCountIsNotAboveUpperBound x tail
+
     match action with
     | PlayCardAction (p, card) when p = player ->
         prevCardCounts
         |> Map.add (removeColor card) (max (prevCardCounts[removeColor card] - 1) 0)
-    | PlayCardAction (p, card) when p = viewpoint -> 
+    | PlayCardAction (p, card) when p = viewpoint ->
         prevCardCounts
-    | PlayCardAction (p, card) -> 
-        ensureCardCountIsNotAboveUpperBound prevCardCounts [removeColor card]
+    | PlayCardAction (p, card) ->
+        ensureCardCountIsNotAboveUpperBound prevCardCounts [ removeColor card ]
 
-    | DrawCardAction (p, _) when p = player ->        
+    | DrawCardAction (p, _) when p = player ->
         prevCardCounts
         |> Map.map (fun card count ->
             if doCardsMatch discardPileTop card then
@@ -63,7 +65,7 @@ let private getCardCounts (prevContext : CardCountingContext) (prevState : State
             else
                 min (count + 1) (fullDeckCardCounts[card] - (countsFromOwnCardsDiscardPile |> Map.tryFind card |? 0)))
     | DrawCardAction (p, card) when p = viewpoint ->
-        ensureCardCountIsNotAboveUpperBound prevCardCounts [card]
+        ensureCardCountIsNotAboveUpperBound prevCardCounts [ card ]
     | DrawCardAction (p, _) ->
         prevCardCounts
 
@@ -76,7 +78,7 @@ let private getCardCounts (prevContext : CardCountingContext) (prevState : State
             else
                 count)
     | DrawAndPlayCardAction (p, card) ->
-        ensureCardCountIsNotAboveUpperBound prevCardCounts [removeColor card]
+        ensureCardCountIsNotAboveUpperBound prevCardCounts [ removeColor card ]
 
     | DrawCardsAndSkipAction (p, cards) when p = player ->
         let drawCount = cards.Length
@@ -88,7 +90,7 @@ let private getCardCounts (prevContext : CardCountingContext) (prevState : State
     | DrawCardsAndSkipAction (p, _) ->
         prevCardCounts
 
-let updateCardCountingContext (context : CardCountingContext) (prevState : State) action (state : State) (viewpoint : Player) =
+let updateCardCountingContext (context: CardCountingContext) (prevState: State) action (state: State) (viewpoint: Player) =
     Array.init state.Players.Length (fun player ->
         if player <> viewpoint then
             getCardCounts context prevState action state viewpoint player

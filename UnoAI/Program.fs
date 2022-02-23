@@ -8,16 +8,15 @@ open ScoreBot
 open CardCountingBot
 
 [<EntryPoint>]
-let main argv = 
+let main argv =
     let ruleSet = defaultRuleSet
-    let bots = [|
-        RandomBot.Factory()
-        GreedyBot.Factory(true)
-        DiversityBot.Factory(true)
-        CardRankingBot.Factory(CardRankingBot.RanksWinRate, CardRankingBot.MinCardCountsWinRate, CardRankingBot.PlayDrawnCardThresholdsWinRate, true)
-        ScoreBot.Factory(ScoreBot.WeightsWinRateNew)
-        CardCountingBot.Factory(CardCountingBot.WeightsWinRate)
-    |]
+    let bots =
+        [| RandomBot.Factory()
+           GreedyBot.Factory(true)
+           DiversityBot.Factory(true)
+           CardRankingBot.Factory(CardRankingBot.RanksWinRate, CardRankingBot.MinCardCountsWinRate, CardRankingBot.PlayDrawnCardThresholdsWinRate, true)
+           ScoreBot.Factory(ScoreBot.WeightsWinRateNew)
+           CardCountingBot.Factory(CardCountingBot.WeightsWinRate) |]
     let randomizePlayOrder = true
     let timeout = 1000
     let numGames = 1_000_000
