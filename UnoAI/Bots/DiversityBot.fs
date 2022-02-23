@@ -6,9 +6,10 @@ open Bot
 open Utils
 
 /// <summary>
-/// Bot that chooses cards in a way to reduce the diversity of cards in hand.
+/// Bot that chooses cards in a way to keep the diversity of cards in hand high.
 ///
-/// * Out of all playable cards, the card that matches with fewest other cards in hand is played.
+/// * Out of all playable cards, the card that matches with the highest number of other cards in hand
+///   (not counting Wild and WildDrawFour cards) is played.
 /// * Wild and WildDrawFour are not played if any other card matches.
 /// * When a drawn card can be played, it is always played.
 /// * When a Wild or WildDrawFour is played, the color that is most common in the player's hand is chosen.
@@ -24,13 +25,12 @@ type DiversityBot(game : Game, player : Player, chooseMostCommonColor : bool) =
 
     let getCardDiversityScore card =
         match card with
-        | Wild None | WildDrawFour None -> -8
+        | Wild None | WildDrawFour None -> 0
         | _ ->
             game.Players[player]
             |> Seq.except [| Wild None; WildDrawFour None |]
             |> Seq.filter (doCardsMatch card)
             |> Seq.length
-            |> (*) -1
 
     let getMostCommonColor() =
         game.Players[player]
