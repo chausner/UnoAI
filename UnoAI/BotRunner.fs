@@ -14,7 +14,9 @@ type GameResult =
       Score: int
       GameLength: int }
 
-let runBots ruleSet (botsFactory: (Game * Player -> Bot) []) (randomizePlayerOrder: bool) timeout =
+type BotFactory = Game -> Player -> Bot
+
+let runBots ruleSet (botsFactory: BotFactory []) (randomizePlayerOrder: bool) timeout =
     let numPlayers = botsFactory.Length
 
     let dealer = Random.Shared.Next(numPlayers)
@@ -27,7 +29,7 @@ let runBots ruleSet (botsFactory: (Game * Player -> Bot) []) (randomizePlayerOrd
         else
             [| 0 .. numPlayers - 1 |]
 
-    let bots = Array.init numPlayers (fun i -> botsFactory[botOrder[i]] (game, i))
+    let bots = Array.init numPlayers (fun i -> botsFactory[botOrder[i]] game i)
 
     bots |> Array.iter (fun bot -> bot.Initialize game.State)
 
@@ -78,7 +80,7 @@ let runBots ruleSet (botsFactory: (Game * Player -> Bot) []) (randomizePlayerOrd
           GameLength = actionsPerformed }
     | _ -> failwith "Game timeout."
 
-let runBotsBatch ruleSet (botsFactory: (Game * Player -> Bot) []) (randomizePlayerOrder: bool) timeout count =
+let runBotsBatch ruleSet (botsFactory: BotFactory []) (randomizePlayerOrder: bool) timeout count =
 #if !DEBUG
     PSeq.init count (fun _ ->
 #else
@@ -104,7 +106,7 @@ let updateStats (stats: GameStats) (result: GameResult) =
     stats.NumGamesWon[result.Winner] <- stats.NumGamesWon[result.Winner] + 1
     stats.TotalPoints[result.Winner] <- stats.TotalPoints[result.Winner] + result.Score
 
-let printStats (stats: GameStats) (bots: (Game.Game * Game.Player -> Bot) []) =
+let printStats (stats: GameStats) (bots: BotFactory []) =
     let getConfidenceInterval (k: int) (n: int) =
         let z = 1.96 // 95% confidence level
         let µ = float k / float n
@@ -114,13 +116,13 @@ let printStats (stats: GameStats) (bots: (Game.Game * Game.Player -> Bot) []) =
     printfn "ID  Player                    Win rate  Avg. points"
 
     for player = 0 to bots.Length - 1 do
-        let playerName = (bots[player] (new Game.Game(defaultRuleSet, 2, 0), 0)).GetType().Name
+        let playerName = (bots[player] (new Game.Game(defaultRuleSet, 2, 0)) 0).GetType().Name
         let winRate = (float stats.NumGamesWon[player]) / (float stats.NumGames)
         let winRateInterval = getConfidenceInterval stats.NumGamesWon[player] stats.NumGames
         let averagePoints = (float stats.TotalPoints[player]) / (float stats.NumGames)
         printfn "%-3i %-18s %7.3f%%±%.3f%%  %11.1f" player playerName (winRate * 100.0) (winRateInterval * 100.0) averagePoints
 
-let runBatchAndPrintStats ruleSet (bots: (Game * Player -> Bot.Bot) []) randomizePlayOrder timeout numGames =
+let runBatchAndPrintStats ruleSet (bots: BotFactory []) randomizePlayOrder timeout numGames =
     printfn "Games: %i" numGames
     printfn "Game timeout: %i" timeout
 

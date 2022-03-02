@@ -41,4 +41,4 @@ type RandomBot(game: Game, player: Player) =
             DrawCardBotAction (fun drawnCard -> Some (chooseColorIfNeeded drawnCard getRandomColor))
 
     static member Factory() =
-        fun (game, player) -> new RandomBot(game, player) :> Bot
+        fun game player -> new RandomBot(game, player) :> Bot

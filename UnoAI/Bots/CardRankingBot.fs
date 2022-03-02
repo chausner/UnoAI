@@ -92,7 +92,7 @@ type CardRankingBot(game: Game, player: Player, ranks: int [], minCardCounts: in
                     None)
 
     static member Factory(ranks: int [], minCardCounts: int [], playDrawnCardThresholds: int [], chooseMostCommonColor: bool) =
-        fun (game, player) -> new CardRankingBot(game, player, ranks, minCardCounts, playDrawnCardThresholds, chooseMostCommonColor) :> Bot
+        fun game player -> new CardRankingBot(game, player, ranks, minCardCounts, playDrawnCardThresholds, chooseMostCommonColor) :> Bot
 
     static member RanksWinRate   = [| 4; 3; 5; 6; 1; 2 |] // optimal ranking to optimize win rate against 3 other random bots (based on 10,000,000 games)
     static member RanksAvgPoints = [| 5; 3; 6; 4; 2; 1 |] // optimal ranking to optimize average points against 3 other random bots (based on 10,000,000 games)

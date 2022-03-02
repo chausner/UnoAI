@@ -77,4 +77,4 @@ type DiversityBot(game: Game, player: Player, chooseMostCommonColor: bool) =
             DrawCardBotAction (fun drawnCard -> Some (chooseColorIfNeeded drawnCard chooseColor))
 
     static member Factory(chooseMostCommonColor: bool) =
-        fun (game, player) -> new DiversityBot(game, player, chooseMostCommonColor) :> Bot
+        fun game player -> new DiversityBot(game, player, chooseMostCommonColor) :> Bot

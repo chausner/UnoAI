@@ -273,7 +273,7 @@ type CardCountingBot(game: Game, player: Player, weights: float []) =
         | None      -> DrawCardBotAction playDrawnCardCallback
 
     static member Factory(weights: float []) =
-        fun (game, player) -> new CardCountingBot(game, player, weights) :> Bot
+        fun game player -> new CardCountingBot(game, player, weights) :> Bot
 
     static member WeightsWinRate = [| -0.168; -0.163; -0.190; -0.227; 0.048; -0.035; -0.0001; 0.0 |] // weights optimized on win rate against 3 other random bots
 

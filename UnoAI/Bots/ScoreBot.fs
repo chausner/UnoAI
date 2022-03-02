@@ -166,7 +166,7 @@ type ScoreBot(game: Game, player: Player, weights: float []) =
         | None      -> DrawCardBotAction playDrawnCardCallback
 
     static member Factory(weights: float []) =
-        fun (game, player) -> new ScoreBot(game, player, weights) :> Bot
+        fun game player -> new ScoreBot(game, player, weights) :> Bot
 
     static member WeightsWinRate = [| -0.90; -0.64; -0.62; -0.81; 0.55; 0.48; 0.14; 0.13 |] // weights optimized on win rate against 3 other random bots
     static member WeightsAvgPoints = [| -0.81; -0.45; -0.85; -0.52; 0.14; 0.70; 0.08; 0.06 |] // weights optimized on average points against 3 other random bots
