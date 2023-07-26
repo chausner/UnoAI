@@ -10,6 +10,9 @@ open System
 open System.Globalization
 open System.IO
 
+type ScoreBotSettings =
+    { Weights: float [] }
+
 type private GameView =
     { OwnCards: Card list
       PlayerCardCounts: int []
@@ -17,18 +20,18 @@ type private GameView =
       Direction: Direction
       DiscardPile: Card list }
 
-type ScoreBot(game: Game, player: Player, weights: float []) =
+type ScoreBot(game: Game, player: Player, settings: ScoreBotSettings) =
     inherit Bot()
 
     let cardScoringFunction card =
         match card with
-        | StandardCard (_, _) -> weights[0]
-        | Reverse _ when game.RuleSet.TwoPlayerReverseIsSkip && game.NumPlayers = 2 -> weights[2]
-        | Reverse _           -> weights[1]
-        | Skip _              -> weights[2]
-        | DrawTwo _           -> weights[3]
-        | Wild _              -> weights[4]
-        | WildDrawFour _      -> weights[5]
+        | StandardCard (_, _) -> settings.Weights[0]
+        | Reverse _ when game.RuleSet.TwoPlayerReverseIsSkip && game.NumPlayers = 2 -> settings.Weights[2]
+        | Reverse _           -> settings.Weights[1]
+        | Skip _              -> settings.Weights[2]
+        | DrawTwo _           -> settings.Weights[3]
+        | Wild _              -> settings.Weights[4]
+        | WildDrawFour _      -> settings.Weights[5]
 
     let scoreFunction (view: GameView) =
         view.OwnCards |> Seq.sumBy cardScoringFunction
@@ -165,12 +168,15 @@ type ScoreBot(game: Game, player: Player, weights: float []) =
         | Some card -> PlayCardBotAction card
         | None      -> DrawCardBotAction playDrawnCardCallback
 
-    static member Factory(weights: float []) =
-        fun game player -> new ScoreBot(game, player, weights) :> Bot
+    static member Factory(settings: ScoreBotSettings) =
+        fun game player -> new ScoreBot(game, player, settings) :> Bot
 
-    static member WeightsWinRate = [| -0.90; -0.64; -0.62; -0.81; 0.55; 0.48; 0.14; 0.13 |] // weights optimized on win rate against 3 other random bots
-    static member WeightsAvgPoints = [| -0.81; -0.45; -0.85; -0.52; 0.14; 0.70; 0.08; 0.06 |] // weights optimized on average points against 3 other random bots
-    static member WeightsWinRateNew = [| -0.168; -0.163; -0.190; -0.227; 0.048; -0.035 |] // weights optimized on win rate against 3 other random bots
+    static member DefaultSettingsWinRate =
+        { Weights = [| -0.90; -0.64; -0.62; -0.81; 0.55; 0.48; 0.14; 0.13 |] } // weights optimized on win rate against 3 other random bots
+    static member DefaultSettingsAvgPoints =
+        { Weights = [| -0.81; -0.45; -0.85; -0.52; 0.14; 0.70; 0.08; 0.06 |] } // weights optimized on average points against 3 other random bots
+    static member DefaultSettingsWinRateNew =
+        { Weights = [| -0.168; -0.163; -0.190; -0.227; 0.048; -0.035 |] } // weights optimized on win rate against 3 other random bots
 
 let optimizeWeights () =
     let ruleSet = defaultRuleSet
@@ -205,7 +211,7 @@ let optimizeWeights () =
     //for param in [-20..1] |> List.rev do
         let scoring = scoring |> Seq.map float |> Seq.toArray
         let bots =     
-            ScoreBot.Factory(scoring) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
+            ScoreBot.Factory({ Weights = scoring }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
             |> Seq.toArray
             
         try

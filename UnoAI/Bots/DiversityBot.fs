@@ -5,6 +5,9 @@ open Game
 open Bot
 open Utils
 
+type DiversityBotSettings =
+    { ChooseMostCommonColor: bool }
+
 /// <summary>
 /// Bot that chooses cards in a way to keep the diversity of cards in hand high.
 ///
@@ -14,7 +17,7 @@ open Utils
 /// * When a drawn card can be played, it is always played.
 /// * When a Wild or WildDrawFour is played, the color that is most common in the player's hand is chosen.
 /// </summary>
-type DiversityBot(game: Game, player: Player, chooseMostCommonColor: bool) =
+type DiversityBot(game: Game, player: Player, settings: DiversityBotSettings) =
     inherit Bot()
 
     let chooseColorIfNeeded card color =
@@ -45,7 +48,7 @@ type DiversityBot(game: Game, player: Player, chooseMostCommonColor: bool) =
         [| Red; Green; Blue; Yellow |] |> Array.chooseRandom
 
     let chooseColor () =
-        if chooseMostCommonColor then
+        if settings.ChooseMostCommonColor then
             getMostCommonColor () |? getRandomColor ()
         else
             getRandomColor ()
@@ -76,5 +79,7 @@ type DiversityBot(game: Game, player: Player, chooseMostCommonColor: bool) =
         else
             DrawCardBotAction (fun drawnCard -> Some (chooseColorIfNeeded drawnCard chooseColor))
 
-    static member Factory(chooseMostCommonColor: bool) =
-        fun game player -> new DiversityBot(game, player, chooseMostCommonColor) :> Bot
+    static member Factory(settings: DiversityBotSettings) =
+        fun game player -> new DiversityBot(game, player, settings) :> Bot
+
+    static member DefaultSettings = { ChooseMostCommonColor = true }

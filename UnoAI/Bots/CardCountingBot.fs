@@ -11,6 +11,9 @@ open System
 open System.Globalization
 open System.IO
 
+type CardCountingBotSettings =
+    { Weights: float [] }
+
 type private GameView =
     { OwnCards: Card list
       PlayerCardCounts: int []
@@ -18,19 +21,19 @@ type private GameView =
       Direction: Direction
       DiscardPile: Card list }
 
-type CardCountingBot(game: Game, player: Player, weights: float []) =
+type CardCountingBot(game: Game, player: Player, settings: CardCountingBotSettings) =
     inherit Bot()
 
     let mutable cardCountingContext: CardCountingContext = Array.empty
 
     let cardScoringFunction card =
         match card with
-        | StandardCard (_, _) -> weights[0]
-        | Reverse _           -> weights[1]
-        | Skip _              -> weights[2]
-        | DrawTwo _           -> weights[3]
-        | Wild _              -> weights[4]
-        | WildDrawFour _      -> weights[5]
+        | StandardCard (_, _) -> settings.Weights[0]
+        | Reverse _           -> settings.Weights[1]
+        | Skip _              -> settings.Weights[2]
+        | DrawTwo _           -> settings.Weights[3]
+        | Wild _              -> settings.Weights[4]
+        | WildDrawFour _      -> settings.Weights[5]
 
     let scoreFunction (view: GameView) =
         // TODO: this breaks for 2 players and Reverse/Skip cards
@@ -38,23 +41,23 @@ type CardCountingBot(game: Game, player: Player, weights: float []) =
 
         seq {
             // number of own cards
-            //yield (view.OwnCards |> List.length |> float, weights[0])
+            //yield (view.OwnCards |> List.length |> float, settings.Weights[0])
 
             // scores of own cards
             yield (view.OwnCards |> Seq.sumBy cardScoringFunction, 1.0)
 
             // number of opponent's cards
-            //yield (((view.PlayerCardCounts |> Seq.sum) - view.OwnCards.Length) |> float, weights[1])
+            //yield (((view.PlayerCardCounts |> Seq.sum) - view.OwnCards.Length) |> float, settings.Weights[1])
 
             // minimum number of cards an opponent has
             //let minCardsOfOpponent = view.PlayerCardCounts |> Seq.indexed |> Seq.filter (fst >> (<>) player) |> Seq.map snd |> Seq.min
-            //yield ((minCardsOfOpponent |> float) ** -1.0, weights[7])
+            //yield ((minCardsOfOpponent |> float) ** -1.0, settings.Weights[7])
 
             // number of own cards with same color as discard pile // maybe better as fraction
-            //yield (view.OwnCards |> Seq.choose getCardColor |> Seq.filter ((=) (getCardColor view.DiscardPile.Head).Value) |> Seq.length |> float, weights[3])
+            //yield (view.OwnCards |> Seq.choose getCardColor |> Seq.filter ((=) (getCardColor view.DiscardPile.Head).Value) |> Seq.length |> float, settings.Weights[3])
 
             // number of distinct colors in own cards
-            //yield (view.OwnCards |> Seq.choose getCardColor |> Seq.distinct |> Seq.length |> float, weights[4])
+            //yield (view.OwnCards |> Seq.choose getCardColor |> Seq.distinct |> Seq.length |> float, settings.Weights[4])
 
             let nextOpponent =
                 if view.ActivePlayer <> player then
@@ -64,14 +67,14 @@ type CardCountingBot(game: Game, player: Player, weights: float []) =
                     (view.ActivePlayer + 1) %% game.NumPlayers
 
             // number of cards of next opponent
-            //yield (view.PlayerCardCounts[opponent] |> float, weights[5])
+            //yield (view.PlayerCardCounts[opponent] |> float, settings.Weights[5])
 
             //let numMatchingCards =
             //    cardCountingContext[opponent]
             //    |> Map.toSeq
             //    |> Seq.filter (fun (card, count) -> doCardsMatch view.DiscardPile.Head card)
             //    |> Seq.sumBy snd
-            //yield (float numMatchingCards, weights[6]) // alone: 15.800%±0.101%  30.7         63.9, with: 22.011%±0.115%  44.5         59.2
+            //yield (float numMatchingCards, settings.Weights[6]) // alone: 15.800%±0.101%  30.7         63.9, with: 22.011%±0.115%  44.5         59.2
 
             //let numMatchingCards =
             //    cardCountingContext[opponent]
@@ -79,7 +82,7 @@ type CardCountingBot(game: Game, player: Player, weights: float []) =
             //    |> Seq.filter (fun (card, count) -> doCardsMatch view.DiscardPile.Head card)
             //    |> Seq.sumBy snd
             //let matchingCardProb = numMatchingCards * view.PlayerCardCounts[opponent]
-            //yield (float matchingCardProb, weights[6]) // alone: 15.520%±0.224%
+            //yield (float matchingCardProb, settings.Weights[6]) // alone: 15.520%±0.224%
 
             let numMatchingCards =
                 cardCountingContext[nextOpponent]
@@ -88,28 +91,28 @@ type CardCountingBot(game: Game, player: Player, weights: float []) =
                 |> Seq.sumBy snd
             let totalCount = cardCountingContext[nextOpponent] |> Map.values |> Seq.sum
             let matchingCardProb = float (numMatchingCards * view.PlayerCardCounts[nextOpponent]) / float totalCount
-            yield (matchingCardProb, weights[6]) // alone: 15.719%±0.226%, with: 22.144%±0.115%  44.8         59.1
+            yield (matchingCardProb, settings.Weights[6]) // alone: 15.719%±0.226%, with: 22.144%±0.115%  44.8         59.1
 
         //let numMatchingCards =
         //    cardCountingContext[opponent]
         //    |> Map.toSeq
         //    |> Seq.filter (fun (card, count) -> doCardsMatch view.DiscardPile.Head card)
         //    |> Seq.length
-        //yield (float numMatchingCards, weights[6]) // alone: 15.441%±0.224%
+        //yield (float numMatchingCards, settings.Weights[6]) // alone: 15.441%±0.224%
 
         //let matchingCardsScore =
         //    cardCountingContext[opponent]
         //    |> Map.toSeq
         //    |> Seq.filter (fun (card, count) -> doCardsMatch view.DiscardPile.Head card)
         //    |> Seq.sumBy (fun (card, count) -> count * getCardScore card)
-        //yield (float matchingCardsScore, weights[6]) // alone: 15.174%±0.222%
+        //yield (float matchingCardsScore, settings.Weights[6]) // alone: 15.174%±0.222%
 
         //let matchingCardsScore =
         //    cardCountingContext[opponent]
         //    |> Map.toSeq
         //    |> Seq.filter (fun (card, count) -> doCardsMatch view.DiscardPile.Head card)
         //    |> Seq.sumBy (fun (card, count) -> float count * cardScoringFunction card * -1.0)
-        //yield (float matchingCardsScore, weights[6]) // alone: 15.847%±0.101%  30.9         63.8, with: 22.070%±0.115%  44.6         59.2
+        //yield (float matchingCardsScore, settings.Weights[6]) // alone: 15.847%±0.101%  30.9         63.8, with: 22.070%±0.115%  44.6         59.2
         }
         |> Seq.sumBy (fun (value, weight) -> value * weight)
 
@@ -272,10 +275,11 @@ type CardCountingBot(game: Game, player: Player, weights: float []) =
         | Some card -> PlayCardBotAction card
         | None      -> DrawCardBotAction playDrawnCardCallback
 
-    static member Factory(weights: float []) =
-        fun game player -> new CardCountingBot(game, player, weights) :> Bot
+    static member Factory(settings: CardCountingBotSettings) =
+        fun game player -> new CardCountingBot(game, player, settings) :> Bot
 
-    static member WeightsWinRate = [| -0.168; -0.163; -0.190; -0.227; 0.048; -0.035; -0.0001; 0.0 |] // weights optimized on win rate against 3 other random bots
+    static member DefaultSettingsWinRate =
+        { Weights = [| -0.168; -0.163; -0.190; -0.227; 0.048; -0.035; -0.0001; 0.0 |] } // weights optimized on win rate against 3 other random bots
 
 let optimizeWeights () =
     let ruleSet = defaultRuleSet
@@ -309,11 +313,11 @@ let optimizeWeights () =
     //for scoring in [0.00001..0.01..0.2] |> Seq.map (fun w -> Array.append scoring' [| w |]) do
     for param in [ 1..40 ] |> Seq.map (fun p -> -0.0001 * float p) do
         //let scoring = scoring |> Seq.toArray
-        let scoring = CardCountingBot.WeightsWinRate
+        let scoring = CardCountingBot.DefaultSettingsWinRate.Weights
         scoring[6] <- param
 
         let bots =     
-            CardCountingBot.Factory(scoring) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
+            CardCountingBot.Factory({ Weights = scoring }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
             |> Seq.toArray
             
         try

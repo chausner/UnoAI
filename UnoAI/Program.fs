@@ -12,11 +12,11 @@ let main argv =
     let ruleSet = defaultRuleSet
     let bots =
         [| RandomBot.Factory()
-           GreedyBot.Factory(true)
-           DiversityBot.Factory(true)
-           CardRankingBot.Factory(CardRankingBot.RanksWinRate, CardRankingBot.MinCardCountsWinRate, CardRankingBot.PlayDrawnCardThresholdsWinRate, true)
-           ScoreBot.Factory(ScoreBot.WeightsWinRateNew)
-           CardCountingBot.Factory(CardCountingBot.WeightsWinRate) |]
+           GreedyBot.Factory(GreedyBot.DefaultSettings)
+           DiversityBot.Factory(DiversityBot.DefaultSettings)
+           CardRankingBot.Factory(CardRankingBot.DefaultSettingsWinRate)
+           ScoreBot.Factory(ScoreBot.DefaultSettingsWinRateNew)
+           CardCountingBot.Factory(CardCountingBot.DefaultSettingsWinRate) |]
     let randomizePlayOrder = true
     let timeout = 1000
     let numGames = 1_000_000

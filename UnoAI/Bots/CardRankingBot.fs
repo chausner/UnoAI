@@ -8,6 +8,12 @@ open BotRunner
 open RandomBot
 open System.IO
 
+type CardRankingBotSettings =
+    { Ranks: int []
+      MinCardCounts: int []
+      PlayDrawnCardThresholds: int []
+      ChooseMostCommonColor: bool }
+
 /// <summary>
 /// Bot that chooses cards based on a fixed ranking.
 ///
@@ -15,7 +21,7 @@ open System.IO
 /// * When a drawn card can be played, it is always played.
 /// * When a Wild or WildDrawFour is played, the color that is most common in the player's hand is chosen.
 /// </summary>
-type CardRankingBot(game: Game, player: Player, ranks: int [], minCardCounts: int [], playDrawnCardThresholds: int [], chooseMostCommonColor: bool) =
+type CardRankingBot(game: Game, player: Player, settings: CardRankingBotSettings) =
     inherit Bot()
 
     let cardTypeIndex card =
@@ -28,7 +34,7 @@ type CardRankingBot(game: Game, player: Player, ranks: int [], minCardCounts: in
         | Wild _              -> 4
         | WildDrawFour _      -> 5
 
-    let scoringFunction card = ranks[cardTypeIndex card]
+    let scoringFunction card = settings.Ranks[cardTypeIndex card]
 
     let chooseColorIfNeeded card color =
         match card with
@@ -48,7 +54,7 @@ type CardRankingBot(game: Game, player: Player, ranks: int [], minCardCounts: in
         [| Red; Green; Blue; Yellow |] |> Array.chooseRandom
 
     let chooseColor () =
-        if chooseMostCommonColor then
+        if settings.ChooseMostCommonColor then
             getMostCommonColor () |? getRandomColor ()
         else
             getRandomColor ()
@@ -64,14 +70,14 @@ type CardRankingBot(game: Game, player: Player, ranks: int [], minCardCounts: in
     override self.PerformAction() =
         let numCardsInHand =
             game.Players[player]
-            |> Seq.filter (fun card -> minCardCounts[cardTypeIndex card] = -1)
+            |> Seq.filter (fun card -> settings.MinCardCounts[cardTypeIndex card] = -1)
             |> Seq.length
 
         let playableCards =
             game.Players[player]
             |> Seq.distinct
             |> Seq.filter game.CanPlayCard
-            |> Seq.filter (fun card -> numCardsInHand <= minCardCounts[cardTypeIndex card] || minCardCounts[cardTypeIndex card] = -1)
+            |> Seq.filter (fun card -> numCardsInHand <= settings.MinCardCounts[cardTypeIndex card] || settings.MinCardCounts[cardTypeIndex card] = -1)
             |> Seq.toList
 
         if not (playableCards |> List.isEmpty) then
@@ -85,28 +91,31 @@ type CardRankingBot(game: Game, player: Player, ranks: int [], minCardCounts: in
         else
 //            DrawCardBotAction (fun drawnCard -> Some (chooseColorIfNeeded drawnCard chooseColor))
             DrawCardBotAction (fun drawnCard ->
-                let threshold = playDrawnCardThresholds[cardTypeIndex drawnCard]
+                let threshold = settings.PlayDrawnCardThresholds[cardTypeIndex drawnCard]
                 if game.Players[player].Length <= threshold || threshold = -1 then
                     Some (chooseColorIfNeeded drawnCard chooseColor)
                 else
                     None)
 
-    static member Factory(ranks: int [], minCardCounts: int [], playDrawnCardThresholds: int [], chooseMostCommonColor: bool) =
-        fun game player -> new CardRankingBot(game, player, ranks, minCardCounts, playDrawnCardThresholds, chooseMostCommonColor) :> Bot
+    static member Factory(settings: CardRankingBotSettings) =
+        fun game player -> new CardRankingBot(game, player, settings) :> Bot
 
-    static member RanksWinRate   = [| 4; 3; 5; 6; 1; 2 |] // optimal ranking to optimize win rate against 3 other random bots (based on 10,000,000 games)
-    static member RanksAvgPoints = [| 5; 3; 6; 4; 2; 1 |] // optimal ranking to optimize average points against 3 other random bots (based on 10,000,000 games)
+    static member DefaultSettingsWinRate =
+        { Ranks = [| 4; 3; 5; 6; 1; 2 |] // optimal ranking to optimize win rate against 3 other random bots (based on 10,000,000 games)
+          MinCardCounts = [| -1; -1; -1; -1; 2; 4 |]
+          PlayDrawnCardThresholds = [| -1; -1; -1; -1; 2; 2 |]
+          ChooseMostCommonColor = true }
 
-    static member MinCardCountsWinRate   = [| -1; -1; -1; -1; 2; 4 |]
-    static member MinCardCountsAvgPoints = [| -1; -1; -1; -1; 5; 3 |]
-
-    static member PlayDrawnCardThresholdsWinRate   = [| -1; -1; -1; -1; 2; 2 |]
-    static member PlayDrawnCardThresholdsAvgPoints = [| -1; -1; -1; -1; 2; 2 |]
+    static member DefaultSettingsAvgPoints =
+        { Ranks = [| 5; 3; 6; 4; 2; 1 |] // optimal ranking to optimize average points against 3 other random bots (based on 10,000,000 games)
+          MinCardCounts = [| -1; -1; -1; -1; 5; 3 |]
+          PlayDrawnCardThresholds = [| -1; -1; -1; -1; 2; 2 |]
+          ChooseMostCommonColor = true }
 
 let optimizeRanking () =
     let ruleSet = defaultRuleSet
     let numPlayers = 4
-    let numGames = 10_000_0
+    let numGames = 100_000
 
     let rec getPermutations n : int list seq =
         match n with
@@ -125,7 +134,7 @@ let optimizeRanking () =
     for ranks in getPermutations 6 do
         let ranks = ranks |> Seq.toArray
         let bots =     
-            CardRankingBot.Factory(ranks, CardRankingBot.MinCardCountsWinRate, CardRankingBot.PlayDrawnCardThresholdsWinRate, true) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
+            CardRankingBot.Factory({ CardRankingBot.DefaultSettingsWinRate with Ranks = ranks }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
             |> Seq.toArray
 
         try
@@ -172,8 +181,8 @@ let optimizeMinCardCounts () =
     //for thresholds in enumerateThresholdsFromFile @"C:\Users\chris\Desktop\UnoAI\run5\best-winrate.csv" do
     for thresholds in enumerateThresholdsFromFile @"C:\Users\chris\Desktop\UnoAI\run5\best-avgscore.csv" do
         let bots =
-            //CardRankingBot.Factory(CardRankingBot.RanksWinRate, thresholds, CardRankingBot.PlayDrawnCardThresholdsWinRate, true) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
-            CardRankingBot.Factory(CardRankingBot.RanksAvgPoints, thresholds, CardRankingBot.PlayDrawnCardThresholdsAvgPoints, true) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
+            //CardRankingBot.Factory({ CardRankingBot.DefaultSettingsWinRate with MinCardCounts = thresholds }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
+            CardRankingBot.Factory({ CardRankingBot.DefaultSettingsAvgPoints with MinCardCounts = thresholds }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
             |> Seq.toArray
 
         try
@@ -208,7 +217,7 @@ let optimizePlayDrawnCardThresholds () =
 
     for thresholds in enumerate [ [-1]; [-1]; [-1]; [-1]; [0;2;3]; [2..4] ] |> Seq.map List.toArray do
         let bots =     
-            CardRankingBot.Factory(CardRankingBot.RanksAvgPoints, CardRankingBot.MinCardCountsAvgPoints, thresholds, true) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
+            CardRankingBot.Factory({ CardRankingBot.DefaultSettingsAvgPoints with PlayDrawnCardThresholds = thresholds }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
             |> Seq.toArray
 
         try
