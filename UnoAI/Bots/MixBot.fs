@@ -4,15 +4,21 @@ open Card
 open Game
 open Bot
 open Utils
+open BotRunner
+open RandomBot
 
 type MixBotSettings =
     { Ranks: int []
       MinCardCounts: int []
       PlayDrawnCardThresholds: int []
-      ChooseMostCommonColor: bool }
+      ChooseMostCommonColor: bool
+      DiversityWeight : float }
 
 /// <summary>
 /// Bot that combines the logic of DiversityBot and CardRankingBot.
+///
+/// This bot achieves a win rate around 0.4 percentage points higher than CardRankingBot.
+/// No improvement in average points is observed, however.
 /// </summary>
 type MixBot(game: Game, player: Player, settings: MixBotSettings) =
     inherit Bot()
@@ -43,7 +49,7 @@ type MixBot(game: Game, player: Player, settings: MixBotSettings) =
             |> Seq.filter (doCardsMatch card)
             |> Seq.length
 
-    let scoringFunction card = settings.Ranks[cardTypeIndex card] + getCardDiversityScore card
+    let scoringFunction card = float settings.Ranks[cardTypeIndex card] + float (getCardDiversityScore card) * settings.DiversityWeight
 
     let getMostCommonColor () =
         game.Players[player]
@@ -102,8 +108,39 @@ type MixBot(game: Game, player: Player, settings: MixBotSettings) =
     static member Factory(settings: MixBotSettings) =
         fun game player -> new MixBot(game, player, settings) :> Bot
 
-    static member DefaultSettingsWinRate = // TODO: just copied default settings from CardRankingBot, need to evaluate best settings
+    static member DefaultSettingsWinRate =
         { Ranks = [| 4; 3; 5; 6; 1; 2 |]
           MinCardCounts = [| -1; -1; -1; -1; 2; 4 |]
           PlayDrawnCardThresholds = [| -1; -1; -1; -1; 2; 2 |]
-          ChooseMostCommonColor = true }
+          ChooseMostCommonColor = true
+          DiversityWeight = 1.0 }
+
+    static member DefaultSettingsAvgPoints =
+        { Ranks = [| 5; 3; 6; 4; 2; 1 |]
+          MinCardCounts = [| -1; -1; -1; -1; 5; 3 |]
+          PlayDrawnCardThresholds = [| -1; -1; -1; -1; 2; 2 |]
+          ChooseMostCommonColor = true
+          DiversityWeight = 0.5 }
+
+let optimizeDiversityWeight () =
+    let ruleSet = defaultRuleSet
+    let numPlayers = 3
+    let numGames = 1_000_000
+
+    for diversityWeight in [0.0; 0.1; 0.2; 0.5; 1.0; 1.5; 2.0; 3.0; 4.0; 5.0; 10.0; 15.0; 20.0; 50.0; 100.0] do
+        let bots =     
+            //MixBot.Factory({ MixBot.DefaultSettingsWinRate with DiversityWeight = diversityWeight }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
+            MixBot.Factory({ MixBot.DefaultSettingsAvgPoints with DiversityWeight = diversityWeight }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
+            |> Seq.toArray
+
+        try
+            let stats = initStats numPlayers
+
+            runBotsBatch ruleSet bots true 1000 numGames
+            |> Seq.iter (updateStats stats)
+
+            let winRate = (float stats.NumGamesWon[0]) / (float stats.NumGames)
+            let averagePoints = (float stats.TotalPoints[0]) / (float stats.NumGames)        
+            printfn "%f  %.4f %.4f" diversityWeight winRate averagePoints
+        with
+        | e -> () //printfn "error"

@@ -25,7 +25,7 @@ let main argv =
     let timeout = 1000
     let numGames = 1_000_000
 
-    runBatchAndPrintStats ruleSet bots randomizePlayOrder timeout numGames
+    //runBatchAndPrintStats ruleSet bots randomizePlayOrder timeout numGames
 
     //CardRankingBot.optimizeRanking()
     //CardRankingBot.optimizeMinCardCounts()
@@ -34,5 +34,7 @@ let main argv =
     //ScoreBot.optimizeWeights()
 
     //CardCountingBot.optimizeWeights()
+
+    MixBot.optimizeDiversityWeight()
 
     0
