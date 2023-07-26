@@ -17,6 +17,7 @@
 		<Compile Include="Bots\GreedyBot.fs" />
 		<Compile Include="Bots\DiversityBot.fs" />
 		<Compile Include="Bots\CardRankingBot.fs" />
+		<Compile Include="Bots\MixBot.fs" />
 		<Compile Include="Bots\ScoreBot.fs" />
 		<Compile Include="Bots\CardCounting.fs" />
 		<Compile Include="Bots\CardCountingBot.fs" />
