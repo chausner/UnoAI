@@ -15,7 +15,7 @@ let main argv =
            GreedyBot.Factory(GreedyBot.DefaultSettings)
            DiversityBot.Factory(DiversityBot.DefaultSettings)
            CardRankingBot.Factory(CardRankingBot.DefaultSettingsWinRate)
-           ScoreBot.Factory(ScoreBot.DefaultSettingsWinRateNew)
+           ScoreBot.Factory(ScoreBot.DefaultSettingsWinRate)
            CardCountingBot.Factory(CardCountingBot.DefaultSettingsWinRate) |]
     let randomizePlayOrder = true
     let timeout = 1000

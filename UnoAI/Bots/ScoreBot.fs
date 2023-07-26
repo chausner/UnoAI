@@ -172,11 +172,10 @@ type ScoreBot(game: Game, player: Player, settings: ScoreBotSettings) =
         fun game player -> new ScoreBot(game, player, settings) :> Bot
 
     static member DefaultSettingsWinRate =
-        { Weights = [| -0.90; -0.64; -0.62; -0.81; 0.55; 0.48; 0.14; 0.13 |] } // weights optimized on win rate against 3 other random bots
-    static member DefaultSettingsAvgPoints =
-        { Weights = [| -0.81; -0.45; -0.85; -0.52; 0.14; 0.70; 0.08; 0.06 |] } // weights optimized on average points against 3 other random bots
-    static member DefaultSettingsWinRateNew =
         { Weights = [| -0.168; -0.163; -0.190; -0.227; 0.048; -0.035 |] } // weights optimized on win rate against 3 other random bots
+    static member DefaultSettingsAvgPoints =
+        { Weights = [| -0.189; -0.153; -0.206; -0.193; 0.015; 0.023 |] } // weights optimized on average points against 3 other random bots
+       
 
 let optimizeWeights () =
     let ruleSet = defaultRuleSet
@@ -186,7 +185,7 @@ let optimizeWeights () =
     let printScoring (scoring: float []) =
         String.concat " " (scoring |> Seq.map (fun x -> x.ToString("F3", CultureInfo.InvariantCulture).PadLeft(6)))
 
-    let ranges = [ (-0.26, -0.17); (-0.26, -0.17); (-0.22, -0.08); (-0.32, -0.10); (-0.35, -0.20); (-0.13, 0.14); (-0.12, 0.08) ]
+    let ranges = [ (-0.2, -0.1); (-0.2, -0.1); (-0.3, -0.1); (-0.3, -0.1); (-0.1, 0.1); (-0.1, 0.1) ]
 
     let getRandomInRanges ranges =
         ranges
