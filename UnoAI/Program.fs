@@ -23,12 +23,12 @@ let main argv =
 
     runBatchAndPrintStats ruleSet bots randomizePlayOrder timeout numGames
 
-    //CardRankingBot.optimizeRanking()
-    //CardRankingBot.optimizeMinCardCounts()
-    //CardRankingBot.optimizePlayDrawnCardThresholds()
+    //CardRankingBotOptimization.optimizeRanking()
+    //CardRankingBotOptimization.optimizeMinCardCounts()
+    //CardRankingBotOptimization.optimizePlayDrawnCardThresholds()
 
-    //ScoreBot.optimizeWeights()
+    //ScoreBotOptimization.optimizeWeights()
 
-    //CardCountingBot.optimizeWeights()
+    //CardCountingBotOptimization.optimizeWeights()
 
     0
