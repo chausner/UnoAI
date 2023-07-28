@@ -93,27 +93,6 @@ type ScoreBot(game: Game, player: Player, settings: ScoreBotSettings) =
           Direction = direction'
           DiscardPile = discardPile' }
 
-    let applyDrawCardAction (view: GameView) =
-        let advance steps : Player =
-            let delta =
-                match view.Direction with
-                | Clockwise        -> steps
-                | Counterclockwise -> -steps
-
-            (view.ActivePlayer + delta) %% game.NumPlayers
-
-        let playerCardCounts' = Array.copy view.PlayerCardCounts
-
-        playerCardCounts'[player] <- playerCardCounts'[player] + 1
-
-        let cardDrawn = fullCardDeck |> List.chooseRandom
-
-        { OwnCards = cardDrawn :: view.OwnCards
-          PlayerCardCounts = playerCardCounts'
-          ActivePlayer = advance 1
-          Direction = view.Direction
-          DiscardPile = view.DiscardPile }
-
     let applyAdvance view =
         let nextPlayer: Player =
             match view.Direction with
@@ -153,7 +132,6 @@ type ScoreBot(game: Game, player: Player, settings: ScoreBotSettings) =
                     |> Seq.collect getAllColorOptions
                     |> Seq.map (fun card -> Some card, view |> applyPlayCardAction card |> scoreFunction)
 
-                //yield None, view |> applyDrawCardAction |> scoreFunction
                 yield None, (view |> scoreFunction) + averageDrawCardScore
             }
 
