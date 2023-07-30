@@ -41,14 +41,6 @@ type GreedyBot(game: Game, player: Player, settings: GreedyBotSettings) =
         else
             getRandomColor ()
 
-    let pickMaxBy projection list =
-        match list with
-        | []
-        | [ _ ] -> list
-        | _ ->
-            let maxValue = list |> Seq.map projection |> Seq.max
-            list |> List.filter (fun x -> projection x = maxValue)
-
     override self.PerformAction() =
         let playableCards =
             game.Players[player]

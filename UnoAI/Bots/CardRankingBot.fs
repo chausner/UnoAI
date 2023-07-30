@@ -56,14 +56,6 @@ type CardRankingBot(game: Game, player: Player, settings: CardRankingBotSettings
         else
             getRandomColor ()
 
-    let pickMaxBy projection list =
-        match list with
-        | []
-        | [ _ ] -> list
-        | _ ->
-            let maxValue = list |> Seq.map projection |> Seq.max
-            list |> List.filter (fun x -> projection x = maxValue)
-
     override self.PerformAction() =
         let numCardsInHand =
             game.Players[player]

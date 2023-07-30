@@ -15,6 +15,24 @@ let formatTimeSpan (ts: TimeSpan) =
 
 let inline (%%) x y = ((x % y) + y) % y
 
+let pickMaxBy projection source =
+    match source with
+    | []
+    | [ _ ] -> source
+    | _ ->
+        source
+        |> Seq.fold (fun (maxValueSoFar, result) x ->
+            let value = projection x
+            if maxValueSoFar |> Option.isNone then
+                Some value, [x]
+            elif value < maxValueSoFar.Value then
+                maxValueSoFar, result
+            elif value = maxValueSoFar.Value then
+                maxValueSoFar, x :: result
+            else
+                Some value, [x]) (None, [])
+        |> snd
+
 module Seq =
     let shuffle source =
         let swap (a: 'T []) i j =
