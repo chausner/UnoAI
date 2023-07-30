@@ -135,8 +135,14 @@ let runBatchAndPrintStats ruleSet (bots: BotFactory []) randomizePlayOrder timeo
     let stats = initStats bots.Length
     let mutable lastProgressUpdate: TimeSpan option = None
 
-    let printProgress (stopwatch: Stopwatch) =
-        if lastProgressUpdate.IsNone || (stopwatch.Elapsed - lastProgressUpdate.Value).TotalSeconds >= 1.0 then
+    let printProgress (stopwatch: Stopwatch) (refreshInterval: TimeSpan) =
+        if lastProgressUpdate.IsNone || stopwatch.Elapsed - lastProgressUpdate.Value >= refreshInterval then
+            let gamesPerSecond = 
+                if stopwatch.Elapsed.TotalSeconds = 0 then
+                    0.0
+                else
+                    float stats.NumGames / stopwatch.Elapsed.TotalSeconds
+            printfn "Games per second: %i " (int gamesPerSecond)
             printfn "Progress: %.0f%%" ((float stats.NumGames) / (float numGames) * 100.0)
             let eta = 
                 match stats.NumGames with
@@ -152,8 +158,14 @@ let runBatchAndPrintStats ruleSet (bots: BotFactory []) randomizePlayOrder timeo
             runBotsBatch ruleSet bots randomizePlayOrder timeout numGames
             |> Seq.iter (fun result ->
                 updateStats stats result
-                printProgress stopwatch))
+                printProgress stopwatch (TimeSpan.FromSeconds(1))))
 
+    let gamesPerSecond = 
+        if elapsed.TotalSeconds = 0 then
+            0.0
+        else
+            float stats.NumGames / elapsed.TotalSeconds
+    printfn "Games per second: %i " (int gamesPerSecond)
     printfn "Progress: 100%%"
     printfn "Elapsed: %s" (elapsed |> formatTimeSpan)
     printStats stats bots
