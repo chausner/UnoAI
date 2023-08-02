@@ -106,26 +106,31 @@ let updateStats (stats: GameStats) (result: GameResult) =
     stats.NumGamesWon[result.Winner] <- stats.NumGamesWon[result.Winner] + 1
     stats.TotalPoints[result.Winner] <- stats.TotalPoints[result.Winner] + result.Score
 
-let printStats (stats: GameStats) (bots: BotFactory []) =
+let private printfncl (format: Printf.TextWriterFormat<'T>): 'T =
+    // ANSI escape code to clear from current cursor to end of line
+    let clearLine = "\x1B[0K"
+    Printf.kfprintf (fun _ -> printfn "%s" clearLine) Console.Out format
+
+let private printStats (stats: GameStats) (bots: BotFactory []) =
     let getConfidenceInterval (k: int) (n: int) =
         let z = 1.96 // 95% confidence level
         let µ = float k / float n
         let σ = sqrt (µ * (1.0 - µ))
         z * σ / (sqrt (float n))
 
-    printfn "ID  Player                    Win rate  Avg. points"
+    printfncl "%s" "ID  Player                    Win rate  Avg. points"
 
     for player = 0 to bots.Length - 1 do
         let playerName = (bots[player] (new Game.Game(defaultRuleSet, 2, 0)) 0).GetType().Name
         let winRate = (float stats.NumGamesWon[player]) / (float stats.NumGames)
         let winRateInterval = getConfidenceInterval stats.NumGamesWon[player] stats.NumGames
         let averagePoints = (float stats.TotalPoints[player]) / (float stats.NumGames)
-        printfn "%-3i %-18s %7.3f%%±%.3f%%  %11.1f" player playerName (winRate * 100.0) (winRateInterval * 100.0) averagePoints
+        printfncl "%-3i %-18s %7.3f%%±%.3f%%  %11.1f" player playerName (winRate * 100.0) (winRateInterval * 100.0) averagePoints
 
 let runBatchAndPrintStats ruleSet (bots: BotFactory []) randomizePlayOrder timeout numGames =
+    enableVirtualTerminalProcessing ()
     printfn "Games: %i" numGames
     printfn "Game timeout: %i" timeout
-
     let cursorPos = Console.GetCursorPosition()
 
     let restoreCursor () =
@@ -142,13 +147,13 @@ let runBatchAndPrintStats ruleSet (bots: BotFactory []) randomizePlayOrder timeo
                     0.0
                 else
                     float stats.NumGames / stopwatch.Elapsed.TotalSeconds
-            printfn "Games per second: %i " (int gamesPerSecond)
-            printfn "Progress: %.0f%%" ((float stats.NumGames) / (float numGames) * 100.0)
+            printfncl "Games per second: %i" (int gamesPerSecond)
+            printfncl "Progress: %.0f%%" ((float stats.NumGames) / (float numGames) * 100.0)
             let eta = 
                 match stats.NumGames with
                 | 0 -> TimeSpan.Zero
                 | _ -> float (numGames - stats.NumGames) / float stats.NumGames * stopwatch.Elapsed            
-            printfn "Elapsed: %s (ETA: %s)" (stopwatch.Elapsed |> formatTimeSpan) (eta |> formatTimeSpan)
+            printfncl "Elapsed: %s (ETA: %s)" (stopwatch.Elapsed |> formatTimeSpan) (eta |> formatTimeSpan)
             printStats stats bots
             restoreCursor ()
             lastProgressUpdate <- Some stopwatch.Elapsed
@@ -165,7 +170,7 @@ let runBatchAndPrintStats ruleSet (bots: BotFactory []) randomizePlayOrder timeo
             0.0
         else
             float stats.NumGames / elapsed.TotalSeconds
-    printfn "Games per second: %i " (int gamesPerSecond)
-    printfn "Progress: 100%%"
-    printfn "Elapsed: %s" (elapsed |> formatTimeSpan)
+    printfncl "Games per second: %i" (int gamesPerSecond)
+    printfncl "Progress: 100%%"
+    printfncl "Elapsed: %s" (elapsed |> formatTimeSpan)
     printStats stats bots
