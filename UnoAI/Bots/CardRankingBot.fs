@@ -72,7 +72,7 @@ type CardRankingBot(game: Game, player: Player, settings: CardRankingBotSettings
         if not (playableCards |> List.isEmpty) then
             let playedCard =
                 playableCards
-                |> pickMaxBy scoringFunction
+                |> Seq.pickMaxBy scoringFunction
                 |> List.chooseRandom
                 |> fun card -> chooseColorIfNeeded card chooseColor
 

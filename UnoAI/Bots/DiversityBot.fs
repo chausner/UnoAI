@@ -63,7 +63,7 @@ type DiversityBot(game: Game, player: Player, settings: DiversityBotSettings) =
         if not (playableCards |> List.isEmpty) then
             let playedCard =
                 playableCards
-                |> pickMaxBy getCardDiversityScore
+                |> Seq.pickMaxBy getCardDiversityScore
                 |> List.chooseRandom
                 |> fun card -> chooseColorIfNeeded card chooseColor
 

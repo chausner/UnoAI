@@ -51,7 +51,7 @@ type GreedyBot(game: Game, player: Player, settings: GreedyBotSettings) =
         if not (playableCards |> List.isEmpty) then
             let playedCard =
                 playableCards
-                |> pickMaxBy getCardScore
+                |> Seq.pickMaxBy getCardScore
                 |> List.chooseRandom
                 |> fun card -> chooseColorIfNeeded card chooseColor
 
