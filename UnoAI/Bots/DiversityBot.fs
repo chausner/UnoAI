@@ -53,14 +53,6 @@ type DiversityBot(game: Game, player: Player, settings: DiversityBotSettings) =
         else
             getRandomColor ()
 
-    let pickMaxBy projection list =
-        match list with
-        | []
-        | [ _ ] -> list
-        | _ ->
-            let maxValue = list |> Seq.map projection |> Seq.max
-            list |> List.filter (fun x -> projection x = maxValue)
-
     override self.PerformAction() =
         let playableCards =
             game.Players[player]
@@ -71,7 +63,7 @@ type DiversityBot(game: Game, player: Player, settings: DiversityBotSettings) =
         if not (playableCards |> List.isEmpty) then
             let playedCard =
                 playableCards
-                |> pickMaxBy getCardDiversityScore
+                |> Seq.pickMaxBy getCardDiversityScore
                 |> List.chooseRandom
                 |> fun card -> chooseColorIfNeeded card chooseColor
 

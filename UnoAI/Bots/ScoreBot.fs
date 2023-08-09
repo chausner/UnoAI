@@ -4,11 +4,6 @@ open Card
 open Game
 open Bot
 open Utils
-open BotRunner
-open RandomBot
-open System
-open System.Globalization
-open System.IO
 
 type ScoreBotSettings =
     { Weights: float [] }
@@ -98,27 +93,6 @@ type ScoreBot(game: Game, player: Player, settings: ScoreBotSettings) =
           Direction = direction'
           DiscardPile = discardPile' }
 
-    let applyDrawCardAction (view: GameView) =
-        let advance steps : Player =
-            let delta =
-                match view.Direction with
-                | Clockwise        -> steps
-                | Counterclockwise -> -steps
-
-            (view.ActivePlayer + delta) %% game.NumPlayers
-
-        let playerCardCounts' = Array.copy view.PlayerCardCounts
-
-        playerCardCounts'[player] <- playerCardCounts'[player] + 1
-
-        let cardDrawn = fullCardDeck |> List.chooseRandom
-
-        { OwnCards = cardDrawn :: view.OwnCards
-          PlayerCardCounts = playerCardCounts'
-          ActivePlayer = advance 1
-          Direction = view.Direction
-          DiscardPile = view.DiscardPile }
-
     let applyAdvance view =
         let nextPlayer: Player =
             match view.Direction with
@@ -158,7 +132,6 @@ type ScoreBot(game: Game, player: Player, settings: ScoreBotSettings) =
                     |> Seq.collect getAllColorOptions
                     |> Seq.map (fun card -> Some card, view |> applyPlayCardAction card |> scoreFunction)
 
-                //yield None, view |> applyDrawCardAction |> scoreFunction
                 yield None, (view |> scoreFunction) + averageDrawCardScore
             }
 
@@ -172,57 +145,6 @@ type ScoreBot(game: Game, player: Player, settings: ScoreBotSettings) =
         fun game player -> new ScoreBot(game, player, settings) :> Bot
 
     static member DefaultSettingsWinRate =
-        { Weights = [| -0.90; -0.64; -0.62; -0.81; 0.55; 0.48; 0.14; 0.13 |] } // weights optimized on win rate against 3 other random bots
-    static member DefaultSettingsAvgPoints =
-        { Weights = [| -0.81; -0.45; -0.85; -0.52; 0.14; 0.70; 0.08; 0.06 |] } // weights optimized on average points against 3 other random bots
-    static member DefaultSettingsWinRateNew =
         { Weights = [| -0.168; -0.163; -0.190; -0.227; 0.048; -0.035 |] } // weights optimized on win rate against 3 other random bots
-
-let optimizeWeights () =
-    let ruleSet = defaultRuleSet
-    let numPlayers = 4
-    let numGames = 30_000
-
-    let printScoring (scoring: float []) =
-        String.concat " " (scoring |> Seq.map (fun x -> x.ToString("F3", CultureInfo.InvariantCulture).PadLeft(6)))
-
-    let ranges = [ (-0.26, -0.17); (-0.26, -0.17); (-0.22, -0.08); (-0.32, -0.10); (-0.35, -0.20); (-0.13, 0.14); (-0.12, 0.08) ]
-
-    let getRandomInRanges ranges =
-        ranges
-        |> Seq.map (fun (l, h) -> Random.Shared.NextDouble() * (h - l) + l)
-        |> Seq.toArray
-
-    let getRandomNear scoring margin =
-        scoring |> Array.map (fun x -> x * (1.0 + Random.Shared.NextDouble() * 2.0 * margin - margin))
-
-    let normalizeScoring scoring =
-        let s = scoring |> Seq.map abs |> Seq.sum
-        scoring |> Array.map (fun x -> x / s)
-
-    let pid = System.Environment.ProcessId
-    use output = File.CreateText(@$"C:\Users\chris\Desktop\UnoAI\run4\{pid}.csv")
-    output.AutoFlush <- true
-
-    //for scoring in Seq.initInfinite (fun _ -> Array.init 6 (fun _ -> Random.Shared.NextDouble() * 2.0 - 1.0)) do
-    for scoring in Seq.initInfinite (fun _ -> getRandomInRanges ranges) |> Seq.map normalizeScoring do
-    //for scoring in Seq.initInfinite (fun _ -> getRandomNear [| -0.359;0.431;0.041;0.062;0.108 |] 0.2) |> Seq.map normalizeScoring do
-    //for scoring in [0.00001..0.01..0.2] |> Seq.map (fun w -> Array.append scoring' [| w |]) do
-    //for param in [-20..1] |> List.rev do
-        let scoring = scoring |> Seq.map float |> Seq.toArray
-        let bots =     
-            ScoreBot.Factory({ Weights = scoring }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
-            |> Seq.toArray
-            
-        try
-            let stats = initStats numPlayers
-
-            runBotsBatch ruleSet bots true 1000 numGames
-            |> Seq.iter (updateStats stats)
-
-            let winRate = (float stats.NumGamesWon[0]) / (float stats.NumGames)
-            let averagePoints = (float stats.TotalPoints[0]) / (float stats.NumGames)        
-            printfn "%s  %.4f %.4f" (printScoring scoring) winRate averagePoints
-            output.WriteLine(String.Join(';', (Array.append scoring [| winRate; averagePoints |])))            
-        with
-        | e -> () // printfn "error"
+    static member DefaultSettingsAvgPoints =
+        { Weights = [| -0.189; -0.153; -0.206; -0.193; 0.015; 0.023 |] } // weights optimized on average points against 3 other random bots

@@ -18,7 +18,7 @@ let main argv =
            //DiversityBot.Factory(DiversityBot.DefaultSettings)
            //CardRankingBot.Factory(CardRankingBot.DefaultSettingsWinRate)
            MixBot.Factory(MixBot.DefaultSettingsWinRate)
-           //ScoreBot.Factory(ScoreBot.DefaultSettingsWinRateNew)
+           //ScoreBot.Factory(ScoreBot.DefaultSettingsWinRate)
            //CardCountingBot.Factory(CardCountingBot.DefaultSettingsWinRate) |]
            |]
     let randomizePlayOrder = true
@@ -27,13 +27,13 @@ let main argv =
 
     //runBatchAndPrintStats ruleSet bots randomizePlayOrder timeout numGames
 
-    //CardRankingBot.optimizeRanking()
-    //CardRankingBot.optimizeMinCardCounts()
-    //CardRankingBot.optimizePlayDrawnCardThresholds()
+    //CardRankingBotOptimization.optimizeRanking()
+    //CardRankingBotOptimization.optimizeMinCardCounts()
+    //CardRankingBotOptimization.optimizePlayDrawnCardThresholds()
 
-    //ScoreBot.optimizeWeights()
+    //ScoreBotOptimization.optimizeWeights()
 
-    //CardCountingBot.optimizeWeights()
+    //CardCountingBotOptimization.optimizeWeights()
 
     MixBot.optimizeDiversityWeight()
 
