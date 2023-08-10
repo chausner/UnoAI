@@ -4,21 +4,19 @@ open Card
 open Game
 open Bot
 open Utils
-open BotRunner
-open RandomBot
 
 type MixBotSettings =
     { Ranks: int []
+      PrioritizeMostCommonColor: bool
       MinCardCounts: int []
       PlayDrawnCardThresholds: int []
-      ChooseMostCommonColor: bool
-      DiversityWeight : float }
+      ChooseMostCommonColor: bool }
 
 /// <summary>
-/// Bot that combines the logic of DiversityBot and CardRankingBot.
+/// Bot that combines the logic of CardRankingBot and DiversityBot with additional tweaks.
 ///
-/// This bot achieves a win rate around 0.4 percentage points higher than CardRankingBot.
-/// No improvement in average points is observed, however.
+/// This bot achieves a win rate improvement of around 1.2 percentage points
+/// and an average points improvement of 1.1 compared to CardRankingBot.
 /// </summary>
 type MixBot(game: Game, player: Player, settings: MixBotSettings) =
     inherit Bot()
@@ -49,8 +47,7 @@ type MixBot(game: Game, player: Player, settings: MixBotSettings) =
             |> Seq.filter (doCardsMatch card)
             |> Seq.length
 
-    let scoringFunction card = float settings.Ranks[cardTypeIndex card] + float (getCardDiversityScore card) * settings.DiversityWeight
-
+    let scoringFunction card = settings.Ranks[cardTypeIndex card]
     let getMostCommonColor () =
         game.Players[player]
         |> Seq.choose getCardColor
@@ -58,6 +55,13 @@ type MixBot(game: Game, player: Player, settings: MixBotSettings) =
         |> Seq.shuffle
         |> Seq.tryMaxBy snd
         |> Option.map fst
+
+    let getMostCommonColors () =
+        game.Players[player]
+        |> Seq.choose getCardColor
+        |> Seq.countBy id
+        |> Seq.pickMaxBy snd
+        |> List.map fst
 
     let getRandomColor () =
         [| Red; Green; Blue; Yellow |] |> Array.chooseRandom
@@ -67,14 +71,6 @@ type MixBot(game: Game, player: Player, settings: MixBotSettings) =
             getMostCommonColor () |? getRandomColor ()
         else
             getRandomColor ()
-
-    let pickMaxBy projection list =
-        match list with
-        | []
-        | [ _ ] -> list
-        | _ ->
-            let maxValue = list |> Seq.map projection |> Seq.max
-            list |> List.filter (fun x -> projection x = maxValue)
 
     override self.PerformAction() =
         let numCardsInHand =
@@ -90,9 +86,23 @@ type MixBot(game: Game, player: Player, settings: MixBotSettings) =
             |> Seq.toList
 
         if not (playableCards |> List.isEmpty) then
+            let candidates =
+                if settings.PrioritizeMostCommonColor then
+                    let mostCommonColors = getMostCommonColors ()
+                    let playableCardsWithMostCommonColor = 
+                        playableCards |> List.filter (fun card ->
+                            match getCardColor card with
+                            | Some color when mostCommonColors |> List.contains color -> true
+                            | _ -> false)
+                    match playableCardsWithMostCommonColor with
+                    | [] -> playableCards
+                    | _  -> playableCardsWithMostCommonColor
+                else
+                    playableCards
             let playedCard =
-                playableCards
-                |> pickMaxBy scoringFunction
+                candidates
+                |> Seq.pickMaxBy scoringFunction
+                |> Seq.pickMaxBy getCardDiversityScore
                 |> List.chooseRandom
                 |> fun card -> chooseColorIfNeeded card chooseColor
 
@@ -110,37 +120,14 @@ type MixBot(game: Game, player: Player, settings: MixBotSettings) =
 
     static member DefaultSettingsWinRate =
         { Ranks = [| 4; 3; 5; 6; 1; 2 |]
+          PrioritizeMostCommonColor = true
           MinCardCounts = [| -1; -1; -1; -1; 2; 4 |]
           PlayDrawnCardThresholds = [| -1; -1; -1; -1; 2; 2 |]
-          ChooseMostCommonColor = true
-          DiversityWeight = 1.0 }
+          ChooseMostCommonColor = true }
 
     static member DefaultSettingsAvgPoints =
         { Ranks = [| 5; 3; 6; 4; 2; 1 |]
+          PrioritizeMostCommonColor = true
           MinCardCounts = [| -1; -1; -1; -1; 5; 3 |]
           PlayDrawnCardThresholds = [| -1; -1; -1; -1; 2; 2 |]
-          ChooseMostCommonColor = true
-          DiversityWeight = 0.5 }
-
-let optimizeDiversityWeight () =
-    let ruleSet = defaultRuleSet
-    let numPlayers = 3
-    let numGames = 1_000_000
-
-    for diversityWeight in [0.0; 0.1; 0.2; 0.5; 1.0; 1.5; 2.0; 3.0; 4.0; 5.0; 10.0; 15.0; 20.0; 50.0; 100.0] do
-        let bots =     
-            //MixBot.Factory({ MixBot.DefaultSettingsWinRate with DiversityWeight = diversityWeight }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
-            MixBot.Factory({ MixBot.DefaultSettingsAvgPoints with DiversityWeight = diversityWeight }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
-            |> Seq.toArray
-
-        try
-            let stats = initStats numPlayers
-
-            runBotsBatch ruleSet bots true 1000 numGames
-            |> Seq.iter (updateStats stats)
-
-            let winRate = (float stats.NumGamesWon[0]) / (float stats.NumGames)
-            let averagePoints = (float stats.TotalPoints[0]) / (float stats.NumGames)        
-            printfn "%f  %.4f %.4f" diversityWeight winRate averagePoints
-        with
-        | e -> () //printfn "error"
+          ChooseMostCommonColor = true }
