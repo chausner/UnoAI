@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
@@ -22,6 +22,7 @@
 		<Compile Include="Bots\CardCounting.fs" />
 		<Compile Include="Bots\CardCountingBot.fs" />
 		<Compile Include="Optimization\CardRankingBotOptimization.fs" />
+		<Compile Include="Optimization\MixBotOptimization.fs" />
 		<Compile Include="Optimization\ScoreBotOptimization.fs" />
 		<Compile Include="Optimization\CardCountingBotOptimization.fs" />
 		<Compile Include="Program.fs" />

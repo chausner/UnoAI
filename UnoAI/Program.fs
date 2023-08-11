@@ -31,6 +31,9 @@ let main argv =
     //CardRankingBotOptimization.optimizeMinCardCounts()
     //CardRankingBotOptimization.optimizePlayDrawnCardThresholds()
 
+    //MixBotOptimization.optimizeMinCardCounts()
+    //MixBotOptimization.optimizePlayDrawnCardThresholds()
+
     //ScoreBotOptimization.optimizeWeights()
 
     //CardCountingBotOptimization.optimizeWeights()
