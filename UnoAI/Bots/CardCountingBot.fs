@@ -275,3 +275,6 @@ type CardCountingBot(game: Game, player: Player, settings: CardCountingBotSettin
 
     static member DefaultSettingsWinRate =
         { Weights = [| -0.168; -0.163; -0.190; -0.227; 0.048; -0.035; -0.0001; 0.0 |] } // weights optimized on win rate against 3 other random bots
+
+    static member DefaultSettingsAvgPoints =
+        { Weights = [| -0.189; -0.153; -0.206; -0.193; 0.015; 0.023; -0.0001; 0.0 |] } // weights optimized on average points against 3 other random bots
