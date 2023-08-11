@@ -4,6 +4,8 @@ open Game
 open BotRunner
 open RandomBot
 open CardRankingBot
+open System
+open System.IO
 
 let optimizeRanking () =
     let ruleSet = defaultRuleSet
@@ -21,8 +23,11 @@ let optimizeRanking () =
                         yield (p |> List.truncate i) @ [ n ] @ (p |> List.skip i)
             }
 
-    let printRanking (scoring: int []) =
-        String.concat " " (scoring |> Seq.map string)
+    let printRanking (ranks: int []) =
+        String.concat " " (ranks |> Seq.map string)
+
+    use output = File.CreateText($"CardRankingBot-Ranking-{Environment.ProcessId}.csv")
+    output.AutoFlush <- true
 
     for ranks in getPermutations 6 do
         let ranks = ranks |> Seq.toArray
@@ -39,5 +44,6 @@ let optimizeRanking () =
             let winRate = (float stats.NumGamesWon[0]) / (float stats.NumGames)
             let averagePoints = (float stats.TotalPoints[0]) / (float stats.NumGames)        
             printfn "%s  %.4f %.4f" (printRanking ranks) winRate averagePoints
+            fprintfn output "%s;%f;%f" (printRanking ranks) winRate averagePoints
         with
-        | e -> () //printfn "error"
+        | e -> printfn "error"

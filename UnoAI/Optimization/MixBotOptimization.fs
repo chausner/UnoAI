@@ -4,6 +4,7 @@ open Game
 open BotRunner
 open RandomBot
 open MixBot
+open System
 open System.IO
 
 let optimizeCardCountLimits () =
@@ -11,7 +12,7 @@ let optimizeCardCountLimits () =
     let numPlayers = 4
     let numGames = 1_000_000
 
-    let enumerateThresholds n start =
+    let enumerateLimits n start =
         seq {
             for t1 = -1 to -1 do
                 for t2 = -1 to -1 do
@@ -23,23 +24,20 @@ let optimizeCardCountLimits () =
                                         yield [| t1; t2; t3; t4; t5; t6 |]
         }
 
-    let enumerateThresholdsFromFile path =
+    let enumerateLimitsFromFile path =
         File.ReadAllLines(path)
         |> Seq.map (fun line -> line.Split('\t') |> Array.map int)
 
-    let printThresholds (scoring: int []) =
+    let printLimits (scoring: int []) =
         String.concat " " (scoring |> Seq.map string)
 
-    let pid = System.Environment.ProcessId
-    use output = File.CreateText(@$"C:\Users\chris\Desktop\UnoAI\run6\{pid}.csv")
+    use output = File.CreateText($"MixBot-CardCountLimits-{Environment.ProcessId}.csv")
     output.AutoFlush <- true
 
-    //for thresholds in enumerateThresholds 7 -1 do
-    //for thresholds in enumerateThresholdsFromFile @"C:\Users\chris\Desktop\UnoAI\run5\best-winrate.csv" do
-    for thresholds in enumerateThresholdsFromFile @"C:\Users\chris\Desktop\UnoAI\run5\best-avgscore.csv" do
+    for limits in enumerateLimits 7 -1 do
+    //for limits in enumerateLimitsFromFile @"best-winrate.csv" do
         let bots =
-            //MixBot.Factory({ MixBot.DefaultSettingsWinRate with CardCountLimits = thresholds }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
-            MixBot.Factory({ MixBot.DefaultSettingsAvgPoints with CardCountLimits = thresholds }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
+            MixBot.Factory({ MixBot.DefaultSettingsWinRate with CardCountLimits = limits }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
             |> Seq.toArray
 
         try
@@ -50,9 +48,10 @@ let optimizeCardCountLimits () =
 
             let winRate = (float stats.NumGamesWon[0]) / (float stats.NumGames)
             let averagePoints = (float stats.TotalPoints[0]) / (float stats.NumGames)        
-            printfn "%s  %.4f %.4f" (printThresholds thresholds) winRate averagePoints
+            printfn "%s  %.4f %.4f" (printLimits limits) winRate averagePoints
+            fprintfn output "%s;%f;%f" (printLimits limits) winRate averagePoints
         with
-        | e -> () //printfn "error"
+        | e -> printfn "error"
 
 let optimizePlayDrawnCardThresholds () =
     let ruleSet = defaultRuleSet
@@ -72,9 +71,13 @@ let optimizePlayDrawnCardThresholds () =
     let printThresholds (scoring: int []) =
         String.concat " " (scoring |> Seq.map string)
 
-    for thresholds in enumerate [ [-1]; [-1]; [-1]; [-1]; [0;2;3]; [2..4] ] |> Seq.map List.toArray do
+    use output = File.CreateText($"MixBot-PlayDrawnCardThresholds-{Environment.ProcessId}.csv")
+    output.AutoFlush <- true
+
+    for thresholds in enumerate [ [-1]; [-1]; [-1]; [-1]; [0;2;3]; [2..4] ] do
+        let thresholds = thresholds |> Seq.toArray
         let bots =     
-            MixBot.Factory({ MixBot.DefaultSettingsAvgPoints with PlayDrawnCardThresholds = thresholds }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
+            MixBot.Factory({ MixBot.DefaultSettingsWinRate with PlayDrawnCardThresholds = thresholds }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
             |> Seq.toArray
 
         try
@@ -86,5 +89,6 @@ let optimizePlayDrawnCardThresholds () =
             let winRate = (float stats.NumGamesWon[0]) / (float stats.NumGames)
             let averagePoints = (float stats.TotalPoints[0]) / (float stats.NumGames)        
             printfn "%s  %.4f %.4f" (printThresholds thresholds) winRate averagePoints
+            fprintfn output "%s;%f;%f" (printThresholds thresholds) winRate averagePoints
         with
-        | e -> () //printfn "error"
+        | e -> printfn "error"
