@@ -1,4 +1,4 @@
-module MixBot
+﻿module MixBot
 
 open Card
 open Game
@@ -12,12 +12,6 @@ type MixBotSettings =
       PlayDrawnCardThresholds: int []
       ChooseMostCommonColor: bool }
 
-/// <summary>
-/// Bot that combines the logic of CardRankingBot and DiversityBot with additional tweaks.
-///
-/// This bot achieves a win rate improvement of around 1.2 percentage points
-/// and an average points improvement of 1.1 compared to CardRankingBot.
-/// </summary>
 type MixBot(game: Game, player: Player, settings: MixBotSettings) =
     inherit Bot()
 
@@ -30,6 +24,8 @@ type MixBot(game: Game, player: Player, settings: MixBotSettings) =
         | DrawTwo _           -> 3
         | Wild _              -> 4
         | WildDrawFour _      -> 5
+
+    let scoringFunction card = settings.Ranks[cardTypeIndex card]
 
     let chooseColorIfNeeded card color =
         match card with
@@ -47,7 +43,6 @@ type MixBot(game: Game, player: Player, settings: MixBotSettings) =
             |> Seq.filter (doCardsMatch card)
             |> Seq.length
 
-    let scoringFunction card = settings.Ranks[cardTypeIndex card]
     let getMostCommonColor () =
         game.Players[player]
         |> Seq.choose getCardColor

@@ -8,13 +8,6 @@ open Utils
 type GreedyBotSettings =
     { ChooseMostCommonColor: bool }
 
-/// <summary>
-/// Bot that makes decisions in a greedy manner (i.e. chooses the option that gives the highest immediate benefit).
-///
-/// * Out of all playable cards, the card with the highest score is chosen.
-/// * When a drawn card can be played, it is always played.
-/// * When a Wild or WildDrawFour is played, the color that is most common in the player's hand is chosen.
-/// </summary>
 type GreedyBot(game: Game, player: Player, settings: GreedyBotSettings) =
     inherit Bot()
 

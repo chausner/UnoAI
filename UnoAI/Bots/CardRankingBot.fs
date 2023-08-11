@@ -9,13 +9,6 @@ type CardRankingBotSettings =
     { Ranks: int []
       ChooseMostCommonColor: bool }
 
-/// <summary>
-/// Bot that chooses cards based on a fixed ranking.
-///
-/// * Out of all playable cards, the card that has the highest rank is chosen.
-/// * When a drawn card can be played, it is always played.
-/// * When a Wild or WildDrawFour is played, the color that is most common in the player's hand is chosen.
-/// </summary>
 type CardRankingBot(game: Game, player: Player, settings: CardRankingBotSettings) =
     inherit Bot()
 

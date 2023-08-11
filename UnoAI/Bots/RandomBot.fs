@@ -5,13 +5,6 @@ open Game
 open Bot
 open Utils
 
-/// <summary>
-/// Bot that makes all decisions in a random manner.
-///
-/// * Out of all playable cards, a random one is selected.
-/// * When a drawn card can be played, it is always played.
-/// * When a Wild or WildDrawFour is played, the color is chosen randomly.
-/// </summary>
 type RandomBot(game: Game, player: Player) =
     inherit Bot()
 
