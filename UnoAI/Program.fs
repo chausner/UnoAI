@@ -1,4 +1,4 @@
-﻿open Game
+open Game
 open BotRunner
 open RandomBot
 open GreedyBot
@@ -28,10 +28,10 @@ let main argv =
     //runBatchAndPrintStats ruleSet bots randomizePlayOrder timeout numGames
 
     //CardRankingBotOptimization.optimizeRanking()
-    //CardRankingBotOptimization.optimizeMinCardCounts()
+    //CardRankingBotOptimization.optimizeCardCountLimits()
     //CardRankingBotOptimization.optimizePlayDrawnCardThresholds()
 
-    //MixBotOptimization.optimizeMinCardCounts()
+    //MixBotOptimization.optimizeCardCountLimits()
     //MixBotOptimization.optimizePlayDrawnCardThresholds()
 
     //ScoreBotOptimization.optimizeWeights()

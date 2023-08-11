@@ -6,7 +6,7 @@ open RandomBot
 open MixBot
 open System.IO
 
-let optimizeMinCardCounts () =
+let optimizeCardCountLimits () =
     let ruleSet = defaultRuleSet
     let numPlayers = 4
     let numGames = 1_000_000
@@ -38,8 +38,8 @@ let optimizeMinCardCounts () =
     //for thresholds in enumerateThresholdsFromFile @"C:\Users\chris\Desktop\UnoAI\run5\best-winrate.csv" do
     for thresholds in enumerateThresholdsFromFile @"C:\Users\chris\Desktop\UnoAI\run5\best-avgscore.csv" do
         let bots =
-            //MixBot.Factory({ MixBot.DefaultSettingsWinRate with MinCardCounts = thresholds }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
-            MixBot.Factory({ MixBot.DefaultSettingsAvgPoints with MinCardCounts = thresholds }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
+            //MixBot.Factory({ MixBot.DefaultSettingsWinRate with CardCountLimits = thresholds }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
+            MixBot.Factory({ MixBot.DefaultSettingsAvgPoints with CardCountLimits = thresholds }) :: (List.replicate (numPlayers - 1) (RandomBot.Factory()))
             |> Seq.toArray
 
         try

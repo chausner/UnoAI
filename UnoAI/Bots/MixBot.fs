@@ -1,4 +1,4 @@
-﻿module MixBot
+module MixBot
 
 open Card
 open Game
@@ -8,7 +8,7 @@ open Utils
 type MixBotSettings =
     { Ranks: int []
       PrioritizeMostCommonColor: bool
-      MinCardCounts: int []
+      CardCountLimits: int []
       PlayDrawnCardThresholds: int []
       ChooseMostCommonColor: bool }
 
@@ -75,14 +75,14 @@ type MixBot(game: Game, player: Player, settings: MixBotSettings) =
     override self.PerformAction() =
         let numCardsInHand =
             game.Players[player]
-            |> Seq.filter (fun card -> settings.MinCardCounts[cardTypeIndex card] = -1)
+            |> Seq.filter (fun card -> settings.CardCountLimits[cardTypeIndex card] = -1)
             |> Seq.length
 
         let playableCards =
             game.Players[player]
             |> Seq.distinct
             |> Seq.filter game.CanPlayCard
-            |> Seq.filter (fun card -> numCardsInHand <= settings.MinCardCounts[cardTypeIndex card] || settings.MinCardCounts[cardTypeIndex card] = -1)
+            |> Seq.filter (fun card -> numCardsInHand <= settings.CardCountLimits[cardTypeIndex card] || settings.CardCountLimits[cardTypeIndex card] = -1)
             |> Seq.toList
 
         if not (playableCards |> List.isEmpty) then
@@ -121,13 +121,13 @@ type MixBot(game: Game, player: Player, settings: MixBotSettings) =
     static member DefaultSettingsWinRate =
         { Ranks = [| 4; 3; 5; 6; 1; 2 |]
           PrioritizeMostCommonColor = true
-          MinCardCounts = [| -1; -1; -1; -1; 2; 4 |]
+          CardCountLimits = [| -1; -1; -1; -1; 2; 4 |]
           PlayDrawnCardThresholds = [| -1; -1; -1; -1; 2; 2 |]
           ChooseMostCommonColor = true }
 
     static member DefaultSettingsAvgPoints =
         { Ranks = [| 5; 3; 6; 4; 2; 1 |]
           PrioritizeMostCommonColor = true
-          MinCardCounts = [| -1; -1; -1; -1; 5; 3 |]
+          CardCountLimits = [| -1; -1; -1; -1; 5; 3 |]
           PlayDrawnCardThresholds = [| -1; -1; -1; -1; 2; 2 |]
           ChooseMostCommonColor = true }
