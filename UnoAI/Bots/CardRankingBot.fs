@@ -4,6 +4,7 @@ open Card
 open Game
 open Bot
 open Utils
+open BotUtils
 
 type CardRankingBotSettings =
     { Ranks: int []
@@ -24,12 +25,6 @@ type CardRankingBot(game: Game, player: Player, settings: CardRankingBotSettings
 
     let scoringFunction card = settings.Ranks[cardTypeIndex card]
 
-    let chooseColorIfNeeded card color =
-        match card with
-        | Wild None
-        | WildDrawFour None -> chooseColor card (color ())
-        | _ -> card
-
     let getMostCommonColor () =
         game.Players[player]
         |> Seq.choose getCardColor
@@ -37,9 +32,6 @@ type CardRankingBot(game: Game, player: Player, settings: CardRankingBotSettings
         |> Seq.shuffle
         |> Seq.tryMaxBy snd
         |> Option.map fst
-
-    let getRandomColor () =
-        [| Red; Green; Blue; Yellow |] |> Array.chooseRandom
 
     let chooseColor () =
         if settings.ChooseMostCommonColor then

@@ -13,6 +13,7 @@
 		<Compile Include="Game.fs" />
 		<Compile Include="Bot.fs" />
 		<Compile Include="BotRunner.fs" />
+		<Compile Include="Bots\BotUtils.fs" />
 		<Compile Include="Bots\RandomBot.fs" />
 		<Compile Include="Bots\GreedyBot.fs" />
 		<Compile Include="Bots\DiversityBot.fs" />

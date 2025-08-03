@@ -4,6 +4,7 @@ open Card
 open Game
 open Bot
 open Utils
+open BotUtils
 
 type MixBotSettings =
     { Ranks: int []
@@ -36,12 +37,6 @@ type MixBot(game: Game, player: Player, settings: MixBotSettings) =
         let nextPlayerCardCount = game.Players[nextPlayer] |> List.length
         nextPlayerCardCount = 1
 
-    let chooseColorIfNeeded card color =
-        match card with
-        | Wild None
-        | WildDrawFour None -> chooseColor card (color ())
-        | _ -> card
-
     let getCardDiversityScore card =
         match card with
         | Wild None
@@ -66,9 +61,6 @@ type MixBot(game: Game, player: Player, settings: MixBotSettings) =
         |> Seq.countBy id
         |> Seq.pickMaxBy snd
         |> List.map fst
-
-    let getRandomColor () =
-        [| Red; Green; Blue; Yellow |] |> Array.chooseRandom
 
     let chooseColor () =
         if settings.ChooseMostCommonColor then

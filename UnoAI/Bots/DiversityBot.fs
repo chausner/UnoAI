@@ -4,18 +4,13 @@ open Card
 open Game
 open Bot
 open Utils
+open BotUtils
 
 type DiversityBotSettings =
     { ChooseMostCommonColor: bool }
 
 type DiversityBot(game: Game, player: Player, settings: DiversityBotSettings) =
     inherit Bot()
-
-    let chooseColorIfNeeded card color =
-        match card with
-        | Wild None
-        | WildDrawFour None -> chooseColor card (color ())
-        | _ -> card
 
     let getCardDiversityScore card =
         match card with
@@ -34,9 +29,6 @@ type DiversityBot(game: Game, player: Player, settings: DiversityBotSettings) =
         |> Seq.shuffle
         |> Seq.tryMaxBy snd
         |> Option.map fst
-
-    let getRandomColor () =
-        [| Red; Green; Blue; Yellow |] |> Array.chooseRandom
 
     let chooseColor () =
         if settings.ChooseMostCommonColor then

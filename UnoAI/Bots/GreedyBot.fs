@@ -4,18 +4,13 @@ open Card
 open Game
 open Bot
 open Utils
+open BotUtils
 
 type GreedyBotSettings =
     { ChooseMostCommonColor: bool }
 
 type GreedyBot(game: Game, player: Player, settings: GreedyBotSettings) =
     inherit Bot()
-
-    let chooseColorIfNeeded card color =
-        match card with
-        | Wild None
-        | WildDrawFour None -> chooseColor card (color ())
-        | _                 -> card
 
     let getMostCommonColor () =
         game.Players[player]
@@ -24,9 +19,6 @@ type GreedyBot(game: Game, player: Player, settings: GreedyBotSettings) =
         |> Seq.shuffle
         |> Seq.tryMaxBy snd
         |> Option.map fst
-
-    let getRandomColor () =
-        [| Red; Green; Blue; Yellow |] |> Array.chooseRandom
 
     let chooseColor () =
         if settings.ChooseMostCommonColor then
