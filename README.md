@@ -83,6 +83,7 @@ Bot that combines the logic of CardRankingBot and DiversityBot with a couple of 
 * Cards of the color(s) that are most common in the bot's hand are preferred over cards of other colors.
 * Cards are first ranked according to the logic of CardRankingBot.
   If multiple candidates have the same highest rank, they are further ranked according to the logic of DiversityBot.
+* If the next player has only one card left, different card ranking rules are applied that favor Draw Two, Wild Draw Four, Skip and Reverse.
 * Certain types of cards are only played after being drawn if the number of cards in the bot's hand is less than or equal to a certain limit.
 
 The default parameters when optimizing for win rate are:
@@ -151,8 +152,8 @@ The following statistics have been determined over a total of 10,000,000 simulat
 | DiversityBot           |         57.5 |           29.7 |
 | CardRankingBot (\*)    |         63.4 |           30.8 |
 | CardRankingBot (\*\*)  |         59.5 |           33.4 |
-| MixBot (\*)            |     **64.4** |           22.2 |
-| MixBot (\*\*)          |         59.2 |       **36.7** |
+| MixBot (\*)            |     **66.4** |           33.2 |
+| MixBot (\*\*)          |         63.6 |       **37.4** |
 | ScoreBot (\*)          |         55.8 |           22.8 |
 | ScoreBot (\*\*)        |         55.5 |           23.8 |
 | CardCountingBot (\*)   |         57.5 |           23.1 |
@@ -169,8 +170,8 @@ The following statistics have been determined over a total of 10,000,000 simulat
 | DiversityBot           |         22.9 |           45.5 |
 | CardRankingBot (\*)    |         21.7 |           42.7 |
 | CardRankingBot (\*\*)  |         21.4 |           43.3 |
-| MixBot (\*)            |     **23.4** |           46.1 |
-| MixBot (\*\*)          |         23.2 |       **47.2** |
+| MixBot (\*)            |     **23.6** |           46.2 |
+| MixBot (\*\*)          |         23.5 |       **47.4** |
 | ScoreBot (\*)          |         20.5 |           39.6 |
 | ScoreBot (\*\*)        |         20.5 |           40.0 |
 | CardCountingBot (\*)   |         22.4 |           43.5 |
