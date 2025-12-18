@@ -112,10 +112,9 @@ type CardCountingBot(game: Game, player: Player, settings: CardCountingBotSettin
         |> Seq.sumBy (fun (value, weight) -> value * weight)
 
     let getAllColorOptions card =
-        let colors = [| Red; Green; Blue; Yellow |]
         match card with
-        | Wild None         -> colors |> Seq.map (fun c -> Wild (Some c))
-        | WildDrawFour None -> colors |> Seq.map (fun c -> WildDrawFour (Some c))
+        | Wild None         -> allCardColors |> Seq.map (fun c -> Wild (Some c))
+        | WildDrawFour None -> allCardColors |> Seq.map (fun c -> WildDrawFour (Some c))
         | _                 -> Seq.singleton card
 
     let getView () =

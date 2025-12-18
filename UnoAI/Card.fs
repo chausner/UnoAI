@@ -6,6 +6,8 @@ type CardColor =
     | Blue
     | Yellow
 
+let allCardColors = [| Red; Green; Blue; Yellow |]
+
 type CardRank = int
 
 type Card =
@@ -18,12 +20,12 @@ type Card =
 
 let fullCardDeck =
     [ for n = 0 to 9 do
-          for c in [| Red; Green; Blue; Yellow |] do
+          for c in allCardColors do
               yield StandardCard(n, c)
               if n <> 0 then
                   yield StandardCard(n, c)
 
-      for c in [| Red; Green; Blue; Yellow |] do
+      for c in allCardColors do
           for _ = 1 to 2 do
               yield Skip c
               yield DrawTwo c

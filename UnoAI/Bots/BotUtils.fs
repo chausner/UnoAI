@@ -4,7 +4,7 @@ open Card
 open Utils
 
 let getRandomColor () =
-    [| Red; Green; Blue; Yellow |] |> Array.chooseRandom
+    allCardColors |> Array.chooseRandom
 
 let chooseColorIfNeeded card color =
     match card with
