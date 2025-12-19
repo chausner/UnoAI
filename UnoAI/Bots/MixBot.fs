@@ -91,7 +91,9 @@ type MixBot(game: Game, player: Player, settings: MixBotSettings) =
         else
             let playableCardsWithinLimits =
                 playableCards
-                |> Seq.filter (fun card -> numCardsInHand <= settings.CardCountLimits[cardTypeIndex card] || settings.CardCountLimits[cardTypeIndex card] = -1)
+                |> Seq.filter (fun card -> 
+                    let limit = settings.CardCountLimits[cardTypeIndex card]
+                    numCardsInHand <= limit || limit = -1)
                 |> Seq.toList
 
             if not (playableCardsWithinLimits |> List.isEmpty) then
