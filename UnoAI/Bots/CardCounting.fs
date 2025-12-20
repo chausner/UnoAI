@@ -41,12 +41,12 @@ let private getCardCounts (prevContext: CardCountingContext) (prevState: State) 
         | [] -> cardCounts
         | card :: tail ->
             let upperBound = fullDeckCardCounts[card] - (countsFromOwnCardsDiscardPile |> Map.tryFind card |? 0)
-            let x =
+            let updatedCardCounts =
                 if cardCounts[card] > upperBound then
                     cardCounts |> Map.add card upperBound
                 else
                     cardCounts
-            ensureCardCountIsNotAboveUpperBound x tail
+            ensureCardCountIsNotAboveUpperBound updatedCardCounts tail
 
     match action with
     | PlayCardAction (p, card) when p = player ->
