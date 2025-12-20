@@ -3,7 +3,7 @@ Implementation of the card game rules of [UNO](https://en.wikipedia.org/wiki/Uno
 
 ## Features
 * Implementation of the core game logic of UNO
-* Seven different bot implementations
+* Eight different bot implementations
 * Multi-threaded batch simulation to determine the average win rate and game points for each bot over a large number of games
 
 ## Bots
@@ -100,6 +100,39 @@ The default parameters when optimizing for game points are:
 
 For more details, see the implementation in [MixBot.fs](UnoAI/Bots/MixBot.fs).
 
+### MixBot2
+Bot that extends the logic of CardRankingBot with a couple of extra rules.
+
+* Cards are first ranked according to the logic of CardRankingBot (and using separate end-game ranks when the next player has only one card left).
+* Cards of the color(s) that are most common in the bot's hand are preferred over cards of other colors.
+* When playing a Wild or Wild Draw Four, colors that are common in the bot's hand are preferred (with a configurable slack).
+* Certain types of cards are only played if the number of cards in the bot's hand is less than or equal to a certain limit
+  (by default this is used to hold Wild and Wild Draw Four cards until few non-Wild cards remain), with separate limits in end-game mode.
+* Card counting information is used as a final tie-breaker to prefer cards that the next active player is least likely to be able to match.
+* Certain types of cards are only played after being drawn if the number of cards in the bot's hand is less than or equal to a certain limit.
+
+The default parameters when optimizing for win rate are:
+
+* Card ranking: Draw Two > Skip > Standard Card > Reverse > Wild Draw Four > Wild
+* End-game card ranking: Draw Two > Wild Draw Four > Skip > Reverse > Standard Card > Wild
+* Wild cards are only ever played if the number of non-Wild cards in the bot's hand is less than or equal to 2.
+* Wild Draw Four cards are only ever played if the number of non-Wild cards in the bot's hand is less than or equal to 4.
+* End-game card count limits are disabled.
+* When playing a Wild or Wild Draw Four, any of the most common colors within 1 card of the maximum are considered preferred options.
+* Wild and Wild Draw Four cards are only played after being drawn if the number of cards in the bot's hand is less than or equal to 2.
+
+The default parameters when optimizing for game points are:
+
+* Card ranking: Skip > Standard Card > Draw Two > Reverse > Wild > Wild Draw Four
+* End-game card ranking: Draw Two > Wild Draw Four > Skip > Reverse > Standard Card > Wild
+* Wild cards are only ever played if the number of non-Wild cards in the bot's hand is less than or equal to 5.
+* Wild Draw Four cards are only ever played if the number of non-Wild cards in the bot's hand is less than or equal to 3.
+* End-game card count limits are disabled.
+* When playing a Wild or Wild Draw Four, any of the most common colors within 2 cards of the maximum are considered preferred options.
+* Wild and Wild Draw Four cards are only played after being drawn if the number of cards in the bot's hand is less than or equal to 2.
+
+For more details, see the implementation in [MixBot2.fs](UnoAI/Bots/MixBot2.fs).
+
 ### ScoreBot
 Bot that chooses cards in such a way to maximize a scoring function defined on the cards in the bot's hand.
 
@@ -152,8 +185,10 @@ The following statistics have been determined over a total of 10,000,000 simulat
 | DiversityBot           |         57.5 |           29.7 |
 | CardRankingBot (\*)    |         63.4 |           30.8 |
 | CardRankingBot (\*\*)  |         59.5 |           33.4 |
-| MixBot (\*)            |     **66.4** |           33.2 |
-| MixBot (\*\*)          |         63.6 |       **37.4** |
+| MixBot (\*)            |         66.4 |           33.2 |
+| MixBot (\*\*)          |         63.6 |           37.4 |
+| MixBot2 (\*)           |     **68.8** |           33.8 |
+| MixBot2 (\*\*)         |         66.6 |       **38.8** |
 | ScoreBot (\*)          |         55.8 |           22.8 |
 | ScoreBot (\*\*)        |         55.5 |           23.8 |
 | CardCountingBot (\*)   |         57.5 |           23.1 |
@@ -170,8 +205,10 @@ The following statistics have been determined over a total of 10,000,000 simulat
 | DiversityBot           |         22.9 |           45.5 |
 | CardRankingBot (\*)    |         21.7 |           42.7 |
 | CardRankingBot (\*\*)  |         21.4 |           43.3 |
-| MixBot (\*)            |     **23.6** |           46.2 |
-| MixBot (\*\*)          |         23.5 |       **47.4** |
+| MixBot (\*)            |         23.6 |           46.2 |
+| MixBot (\*\*)          |         23.5 |           47.4 |
+| MixBot2 (\*)           |     **24.2** |           47.4 |
+| MixBot2 (\*\*)         |         24.1 |       **48.8** |
 | ScoreBot (\*)          |         20.5 |           39.6 |
 | ScoreBot (\*\*)        |         20.5 |           40.0 |
 | CardCountingBot (\*)   |         22.4 |           43.5 |

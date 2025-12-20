@@ -5,6 +5,7 @@ open GreedyBot
 open DiversityBot
 open CardRankingBot
 open MixBot
+open MixBot2
 open ScoreBot
 open CardCountingBot
 
@@ -18,13 +19,15 @@ let runStatsOneVsRandomBots numPlayers =
            CardRankingBot.Factory(CardRankingBot.DefaultSettingsAvgPoints)
            MixBot.Factory(MixBot.DefaultSettingsWinRate)
            MixBot.Factory(MixBot.DefaultSettingsAvgPoints)
+           MixBot2.Factory(MixBot2.DefaultSettingsWinRate)
+           MixBot2.Factory(MixBot2.DefaultSettingsAvgPoints)
            ScoreBot.Factory(ScoreBot.DefaultSettingsWinRate)
            ScoreBot.Factory(ScoreBot.DefaultSettingsAvgPoints)
            CardCountingBot.Factory(CardCountingBot.DefaultSettingsWinRate)
-           CardCountingBot.Factory(CardCountingBot.DefaultSettingsAvgPoints)|]
+           CardCountingBot.Factory(CardCountingBot.DefaultSettingsAvgPoints) |]
     let randomizePlayOrder = true
     let timeout = 1000
-    let numGames = 1_000_000
+    let numGames = 10_000_000
     let bot2 = RandomBot.Factory()
 
     printfn "%d players, * vs. %d RandomBot(s)" numPlayers (numPlayers - 1)
@@ -51,6 +54,7 @@ let main argv =
            DiversityBot.Factory(DiversityBot.DefaultSettings)
            CardRankingBot.Factory(CardRankingBot.DefaultSettingsWinRate)
            MixBot.Factory(MixBot.DefaultSettingsWinRate)
+           MixBot2.Factory(MixBot2.DefaultSettingsWinRate)
            ScoreBot.Factory(ScoreBot.DefaultSettingsWinRate)
            CardCountingBot.Factory(CardCountingBot.DefaultSettingsWinRate) |]
     let randomizePlayOrder = true
@@ -65,6 +69,9 @@ let main argv =
 
     //MixBotOptimization.optimizeCardCountLimits()
     //MixBotOptimization.optimizePlayDrawnCardThresholds()
+
+    //MixBot2Optimization.optimizeEndGameCardCountLimits()
+    //MixBot2Optimization.optimizeWildPreferredColorSlack()
 
     //ScoreBotOptimization.optimizeWeights()
 
